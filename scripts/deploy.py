@@ -69,11 +69,11 @@ def pull_scenario_repository(
     return True
 
 def minify_scenario_files(source_dir: Path, target_dir: Path) -> bool:
-    """Minify all JSON files from source to target directory"""
+    """Minify all JSON files from source to target directory, recursively"""
     print(f"\n⚙️  Minifying JSON files...")
     
     target_dir.mkdir(parents=True, exist_ok=True)
-    json_files = list(source_dir.glob('*.json'))
+    json_files = list(source_dir.glob('**/*.json'))
     
     if not json_files:
         print(f"⚠️  No JSON files found in {source_dir}")
@@ -81,7 +81,11 @@ def minify_scenario_files(source_dir: Path, target_dir: Path) -> bool:
     
     success_count = 0
     for json_file in json_files:
-        output_file = target_dir / json_file.name
+        # Calculate relative path from source_dir
+        relative_path = json_file.relative_to(source_dir)
+        output_file = target_dir / relative_path
+        # Ensure output directory exists
+        output_file.parent.mkdir(parents=True, exist_ok=True)
         if minify_json(json_file, output_file):
             success_count += 1
     
