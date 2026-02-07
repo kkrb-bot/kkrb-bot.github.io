@@ -147,7 +147,8 @@ def main():
                 print(f"   📄 {item.name}")
         
         # Step 2: Process each scenario type
-        scenario_types = ['main', 'card', 'event', 'love']
+        # Dynamically get all subdirectories as scenario types
+        scenario_types = [d.name for d in temp_dir.iterdir() if d.is_dir()]
         
         for scenario_type in scenario_types:
             source_subdir = temp_dir / scenario_type
@@ -159,6 +160,19 @@ def main():
                     print(f"⚠️  Failed to minify some files in {scenario_type}")
             else:
                 print(f"⚠️  Source directory not found: {source_subdir}")
+        
+        # Step 2.5: Process root level JSON files (e.g., info.json)
+        print(f"\n📂 Processing root level JSON files...")
+        root_json_files = list(temp_dir.glob('*.json'))
+        if root_json_files:
+            for json_file in root_json_files:
+                output_file = target_dir / json_file.name
+                if minify_json(json_file, output_file):
+                    print(f"✓ Minified {json_file.name}")
+                else:
+                    print(f"✗ Failed to minify {json_file.name}")
+        else:
+            print("⚠️  No root level JSON files found")
         
         # Step 3: Generate manifests
         if not generate_manifests():
