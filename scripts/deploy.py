@@ -4,7 +4,7 @@ Deployment script for GitHub Pages
 This script:
 1. Clones/pulls the private scenario repository
 2. Minifies JSON files
-3. Generates manifests using generate_manifests.py
+3. Generates manifests using build_search_chunks.py
 """
 
 import os
@@ -93,9 +93,9 @@ def generate_manifests() -> bool:
     print(f"\n📋 Generating manifests...")
     
     try:
-        # Call the generate_manifests.py script
+        # Call the build_search_chunks.py script
         result = subprocess.run(
-            ['python3', 'scripts/generate_manifests.py'],
+            ['python3', 'scripts/build_search_chunks.py'],
             check=True,
             capture_output=True,
             text=True
