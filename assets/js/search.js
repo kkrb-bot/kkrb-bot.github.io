@@ -1337,12 +1337,15 @@ function generateLoveStoryTitle(scenarioId) {
 function generateCardStoryTitle(scenarioId) {
     const [cardIdStr, episodeStr] = scenarioId.split('-');
     
+    const cardId = parseInt(cardIdStr);
+    const displayId = getDisplayCardId(cardId);
+    
     const japaneseNumerals = ['', '１', '２', '３', '４', '５', '６', '７', '８', '９', '１０'];
     
     const episode = parseInt(episodeStr);
     const japaneseEpisode = japaneseNumerals[episode] || episode;
     
-    return `${cardIdStr}　${japaneseEpisode}話`;
+    return `${displayId}　${japaneseEpisode}話`;
 }
 
 /**
@@ -1537,8 +1540,10 @@ function generateScenarioLink(type, scenarioId) {
             return `#love/${charId}`;
         }
         case 'card': {
-            const [cardId, episode] = scenarioId.split('-');
-            return `#card/${cardId}`;
+            const [cardIdStr, episode] = scenarioId.split('-');
+            const cardId = parseInt(cardIdStr);
+            const displayId = getDisplayCardId(cardId);
+            return `#card/${displayId}`;
         }
         case 'event': {
             const [eventId, episode] = scenarioId.split('-');
