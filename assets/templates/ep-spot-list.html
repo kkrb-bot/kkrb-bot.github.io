@@ -1,0 +1,15 @@
+<div class="list-container">
+    <div class="list-group">
+        <h3 class="list-title">スポット</h3>
+        <div class="list-grid ep-spot-grid">
+            {{#spots}}
+            <a href="#ep/spot/{{spotId}}" class="ep-spot-item" title="スポット {{spotId}}">
+                <img src="{{iconPath}}" onerror="this.parentElement.style.display='none'">
+            </a>
+            {{/spots}}
+        </div>
+    </div>
+</div>
+<div class="back-links">
+    <a href="#" class="back-link">← トップへ戻る</a>
+</div>

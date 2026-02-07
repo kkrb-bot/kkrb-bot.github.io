@@ -1,0 +1,170 @@
+<div class="search-header">
+    <p>セリフを話者と内容で検索できます。</p>
+</div>
+
+<div class="search-form">
+    <div class="form-group">
+        <label>話者を選択：</label>
+        <small class="form-hint">何も選択しない場合は制限なしで検索します</small>
+        <div id="speaker-checkboxes" class="checkbox-container speaker-checkbox-group">
+            {{speakers}}
+            <div class="speaker-controls">
+                <button id="select-all-btn" class="btn-mini">すべて</button>
+                <button id="deselect-all-btn" class="btn-mini">すべて解除</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label for="custom-speaker-input">その他（カスタム入力）：</label>
+        <input 
+            type="text" 
+            id="custom-speaker-input" 
+            placeholder="例: 名前1, 名前2"
+            autocomplete="off"
+        >
+        <small>カンマで複数入力できます。上の選択肢と OR 関係です（どちらか一方に該当すれば検索対象）。例: <code>話者1, 話者2</code></small>
+    </div>
+    
+    <div class="form-group">
+        <label for="content-input">内容（正規表現）：</label>
+        <input 
+            type="text" 
+            id="content-input" 
+            placeholder="例: .*魔法.* または ^それは"
+            autocomplete="off"
+        >
+        <div class="regex-help">
+            <details>
+                <summary>正規表現の基本</summary>
+                <div class="regex-examples">
+                    <div class="regex-subtitle">よく使うパターン</div>
+                    <ul>
+                        <li><code>.</code> - 任意の1文字</li>
+                        <li><code>*</code> - 直前の文字の0回以上の繰り返し</li>
+                        <li><code>+</code> - 直前の文字の1回以上の繰り返し</li>
+                        <li><code>?</code> - 直前の文字の0回または1回</li>
+                        <li><code>^</code> - 文字列の最初</li>
+                        <li><code>$</code> - 文字列の最後</li>
+                        <li><code>|</code> - OR（例: <code>猫|犬</code>）</li>
+                        <li><code>[abc]</code> - a、b、cのいずれか</li>
+                        <li><code>[^abc]</code> - a、b、c以外</li>
+                    </ul>
+                    <div class="regex-subtitle">例</div>
+                    <ul>
+                        <li><code>魔法</code> - 「魔法」を含む</li>
+                        <li><code>^おまえ</code> - 「おまえ」で始まる</li>
+                        <li><code>.*愛.*</code> - 「愛」を含む（.*は任意の文字）</li>
+                        <li><code>好き|嫌い</code> - 「好き」または「嫌い」</li>
+                        <li><code>思う?</code> - 「思」または「思う」</li>
+                        <li><code>君に...*</code> - 「君に」の後に3文字以上続く</li>
+                    </ul>
+                    <small>詳細は <a href="https://developer.mozilla.org/ja/docs/Web/JavaScript/Guide/Regular_expressions" target="_blank">MDN正規表現ガイド</a>を参照</small>
+                </div>
+            </details>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label>ストーリータイプ：</label>
+        <small class="form-hint">何も選択しない場合は制限なしで検索します</small>
+        <div class="checkbox-container scenario-type-checkboxes">
+            <label class="checkbox-label">
+                <input 
+                    type="checkbox" 
+                    class="scenario-type-checkbox" 
+                    value="main"
+                >
+                <span>メインストーリー</span>
+            </label>
+            <label class="checkbox-label">
+                <input 
+                    type="checkbox" 
+                    class="scenario-type-checkbox" 
+                    value="event"
+                >
+                <span>イベントストーリー</span>
+            </label>
+            <label class="checkbox-label">
+                <input 
+                    type="checkbox" 
+                    class="scenario-type-checkbox" 
+                    value="love"
+                >
+                <span>親愛ストーリー</span>
+            </label>
+            <label class="checkbox-label">
+                <input 
+                    type="checkbox" 
+                    class="scenario-type-checkbox" 
+                    value="card"
+                >
+                <span>カードストーリー</span>
+            </label>
+            <label class="checkbox-label">
+                <input 
+                    type="checkbox" 
+                    class="scenario-type-checkbox" 
+                    value="ep-spot"
+                >
+                <span>エピソード（スポット）</span>
+            </label>
+            <label class="checkbox-label">
+                <input 
+                    type="checkbox" 
+                    class="scenario-type-checkbox" 
+                    value="ep-chara"
+                >
+                <span>エピソード（キャラ）</span>
+            </label>
+            <label class="checkbox-label">
+                <input 
+                    type="checkbox" 
+                    class="scenario-type-checkbox" 
+                    value="ep-special"
+                >
+                <span>エピソード（スペシャル）</span>
+            </label>
+            <label class="checkbox-label">
+                <input 
+                    type="checkbox" 
+                    class="scenario-type-checkbox" 
+                    value="ep-card"
+                >
+                <span>エピソード（カード）</span>
+            </label>
+            <label class="checkbox-label">
+                <input 
+                    type="checkbox" 
+                    class="scenario-type-checkbox" 
+                    value="campaign"
+                >
+                <span>ログインストーリー</span>
+            </label>
+            <div class="scenario-type-controls">
+                <button id="select-all-types-btn" class="btn-mini">すべて</button>
+                <button id="deselect-all-types-btn" class="btn-mini">すべて解除</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-actions">
+        <button id="search-btn" class="btn-primary">検索</button>
+        <button id="clear-btn" class="btn-secondary">クリア</button>
+    </div>
+</div>
+
+<div class="cache-management">
+    <div class="cache-title">キャッシュ管理</div>
+    <div class="cache-info">
+        <p>検索データはブラウザに保存されています。</p>
+        <div class="cache-details">
+            <span>キャッシュサイズ: <strong id="cache-size-display">計算中...</strong></span>
+            <button id="clear-cache-btn" class="btn-mini btn-danger">キャッシュをクリア</button>
+        </div>
+        <small>キャッシュをクリアすると、次回検索時に再ダウンロードが必要になります。</small>
+    </div>
+</div>
+
+<div id="search-results" class="search-results" style="display: none;"></div>
+<div id="search-error" class="search-error" style="display: none;"></div>

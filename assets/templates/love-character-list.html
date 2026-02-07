@@ -1,0 +1,15 @@
+<div class="list-container">
+    {{#countries}}
+    <div class="list-group">
+        <h3 class="list-title">{{name}}</h3>
+        <div class="list-grid">
+            {{#characters}}
+            <a href="#love/{{url}}" class="list-item">{{displayName}}</a>
+            {{/characters}}
+        </div>
+    </div>
+    {{/countries}}
+</div>
+<div class="back-links">
+    <a href="#" class="back-link">← トップへ戻る</a>
+</div>

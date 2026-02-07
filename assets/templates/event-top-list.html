@@ -1,0 +1,17 @@
+<div class="list-container">
+    {{#years}}
+    <div class="list-group">
+        <h3 class="list-title" id="year-{{year}}">{{year}}年</h3>
+        <div class="list-grid event-grid">
+            {{#events}}
+            <a href="#event/{{eventId}}" class="event-item" title="イベント{{eventId}}">
+                <img src="{{iconPath}}"/>
+            </a>
+            {{/events}}
+        </div>
+    </div>
+    {{/years}}
+</div>
+<div class="back-links">
+    <a href="#" class="back-link">← トップへ戻る</a>
+</div>
