@@ -82,6 +82,21 @@ function getPartDisplayText(partNumber) {
 }
 
 /**
+ * 1.5部の表示番号から章名を取得
+ * @param {number} displayNum - 表示番号 (1-4)
+ * @returns {string} 章名
+ */
+function getPart1_5ChapterName(displayNum) {
+    const chapterNames = {
+        1: 'プロローグ',
+        2: '前編',
+        3: '中編',
+        4: '後編'
+    };
+    return chapterNames[displayNum] || `${displayNum}`;
+}
+
+/**
  * 特定の章がプロローグであるかを判定
  * @param {number} chapterNum - 章番号
  * @returns {boolean}
@@ -113,6 +128,10 @@ function renderMainStory(scenario, chapterNum, episodeIndex, totalEpisodesInChap
             } else {
                 h2Text = `${partText}　${chapterTitle}`;
             }
+        } else if (partNumber === 1.5) {
+            const displayInfo = getDisplayChapterInfo(chapterNum);
+            const chapterName = getPart1_5ChapterName(displayInfo.displayNum);
+            h2Text = `${partText}　${chapterName}`;
         } else if (scenario.Chapter) {
             const chapterParts = scenario.Chapter.split('|');
 
@@ -298,7 +317,7 @@ async function generateMainChapterList() {
     
     // Part 1.5: Chapters 1-4
     for (let i = 1; i <= 4; i++) {
-        const chapterDisplay = String(i).replace(/\d/g, (d) => '０１２３４５６７８９'[d]);
+        const chapterDisplay = getPart1_5ChapterName(i);
         part1_5Chapters.push({ num: i, display: chapterDisplay });
     }
     
@@ -322,8 +341,8 @@ function generatePart1_5ChapterList() {
     html += '<h3 class="list-title">第１．５部</h3>';
     html += '<div class="list-grid">';
     for (let i = 1; i <= 4; i++) {
-        const chapterDisplay = String(i).replace(/\d/g, (d) => '０１２３４５６７８９'[d]);
-        html += `<a href="#main/1.5/${i}" class="list-item">第${chapterDisplay}章</a>`;
+        const chapterDisplay = getPart1_5ChapterName(i);
+        html += `<a href="#main/1.5/${i}" class="list-item">${chapterDisplay}</a>`;
     }
     html += '</div></div>';
 
