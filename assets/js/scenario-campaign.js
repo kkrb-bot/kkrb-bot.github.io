@@ -236,7 +236,6 @@ async function loadAndRenderCampaignSeries(campaignIndex, onLoadComplete) {
  */
 async function generateCampaignTopList() {
     const campaigns = await loadCampaignData();
-    console.log('[generateCampaignTopList] Loaded campaigns:', campaigns);
     
     // キャンペーンを倒序に表示
     const reversedCampaigns = campaigns.map((campaign, index) => ({
@@ -274,9 +273,7 @@ async function generateCampaignTopList() {
         showEvents: true
     };
 
-    console.log('[generateCampaignTopList] Template data:', templateData);
     const html = await templateManager.renderTemplate('campaign-list', templateData);
-    console.log('[generateCampaignTopList] Rendered HTML:', html);
     return html;
 }
 
