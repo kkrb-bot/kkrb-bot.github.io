@@ -974,7 +974,7 @@ function performSearchInternal() {
         }
 
         let results = allDialogues.filter(dialogue => {
-            if (speakers.length > 0 && !speakers.includes(dialogue.speaker)) {
+            if (speakers.length > 0 && !speakers.some(speaker => dialogue.speaker.includes(speaker))) {
                 return false;
             }
 
