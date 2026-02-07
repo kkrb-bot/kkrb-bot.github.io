@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ネ〇くんは大変なものを盗んでいきました</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/search.css">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="static/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="static/favicon-16x16.png">
+    <link rel="shortcut icon" href="static/favicon.ico">
+    <link rel="manifest" href="site.webmanifest">
+</head>
+
+<body>
+    <header>
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+        </div>
+        <div class="header-title">ネ〇くんは大変なものを盗んでいきました</div>
+        <label class="theme-toggle">
+            <input type="checkbox" id="themeToggle">
+            <span class="toggle-slider"></span>
+        </label>
+    </header>
+
+    <aside id="sidebar">
+        <nav>
+            <a href="#home" class="nav-link active">トップ</a>
+            <a href="#main" class="nav-link">メインストーリー</a>
+            <a href="#event" class="nav-link">イベントストーリー</a>
+            <a href="#lgst" class="nav-link">ログインストーリー</a>
+            <a href="#love" class="nav-link">親愛ストーリー</a>
+            <a href="#card" class="nav-link">カードストーリー</a>
+            <a href="#ep" class="nav-link">エピソード</a>
+            <a href="#search" class="nav-link">セリフを検索</a>
+        </nav>
+    </aside>
+
+    <div class="overlay" id="overlay"></div>
+
+    <button id="tocFloatingBtn" class="toc-floating-btn" aria-label="目次を開く">☰</button>
+
+    <main id="content">
+        <article class="page-content" data-page="home">
+            <h1>それよりも、ネ〇はどこですか？</h1>
+        </article>
+
+        <article class="page-content" data-page="love" style="display: none;">
+            <h1>親愛ストーリー</h1>
+            <div id="love-content"></div>
+        </article>
+
+        <article class="page-content" data-page="main" style="display: none;">
+            <h1>メインストーリー</h1>
+            <div id="main-content"></div>
+        </article>
+
+        <article class="page-content" data-page="event" style="display: none;">
+            <h1>イベントストーリー</h1>
+            <div id="event-content"></div>
+        </article>
+
+        <article class="page-content" data-page="lgst" style="display: none;">
+            <h1>ログインストーリー</h1>
+            <div id="campaign-content"></div>
+        </article>
+
+        <article class="page-content" data-page="card" style="display: none;">
+            <h1>カードストーリー</h1>
+            <div id="card-content"></div>
+        </article>
+
+        <article class="page-content" data-page="ep" style="display: none;">
+            <h1>エピソード</h1>
+            <div id="ep-content"></div>
+        </article>
+
+        <article class="page-content" data-page="search" style="display: none;">
+            <h1>セリフを検索</h1>
+            <div id="search-page-content"></div>
+        </article>
+    </main>
+
+    <!-- 設定とユーティリティスクリプト -->
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/scenario-utils.js"></script>
+    <script src="assets/js/template-manager.js"></script>
+
+    <!-- モジュールスクリプト -->
+    <script src="assets/js/character.js"></script>
+    <script src="assets/js/ui-manager.js"></script>
+    <script src="assets/js/router.js"></script>
+
+    <!-- シナリオ処理スクリプト -->
+    <script src="assets/js/scenario-love.js"></script>
+    <script src="assets/js/scenario-main.js"></script>
+    <script src="assets/js/scenario-event.js"></script>
+    <script src="assets/js/scenario-campaign.js"></script>
+    <script src="assets/js/scenario-card.js"></script>
+    <script src="assets/js/scenario-ep.js"></script>
+
+    <!-- 機能スクリプト -->
+    <script src="assets/js/toc.js"></script>
+    <script src="assets/js/search.js"></script>
+
+    <!-- アプリケーション入口 -->
+    <script src="assets/js/app.js"></script>
+</body>
+
+</html>

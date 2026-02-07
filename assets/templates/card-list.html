@@ -1,0 +1,15 @@
+<div class="list-container">
+    <div class="list-group">
+        <h3 class="list-title">全カード</h3>
+        <div class="list-grid card-grid">
+            {{#cards}}
+            <a href="#card/{{displayId}}" class="card-item" title="カード {{displayId}}">
+                <img src="{{iconPath}}" onerror="this.parentElement.style.display='none'">
+            </a>
+            {{/cards}}
+        </div>
+    </div>
+</div>
+<div class="back-links">
+    <a href="#" class="back-link">← トップへ戻る</a>
+</div>

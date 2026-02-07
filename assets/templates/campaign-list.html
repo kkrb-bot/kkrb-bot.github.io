@@ -1,0 +1,41 @@
+<div class="list-container">
+    <div class="list-group">
+        <h2 class="no-toc-title">キャンペーン</h2>
+        <div class="list-grid campaign-grid">
+            {{#campaigns}}
+            <a href="#lgst/{{originalIndex}}" class="campaign-item" title="{{name}}">
+                <div class="campaign-item-wrapper">
+                    <img src="{{iconPath}}" alt="{{name}}"/>
+                    <div class="campaign-item-name">{{name}}</div>
+                </div>
+            </a>
+            {{/campaigns}}
+        </div>
+    </div>
+
+    {{#showEvents}}
+    <div class="list-group">
+        <h2 class="no-toc-title">イベント</h2>
+        <div class="events-note">
+            <p>なお、イベントログインストーリーの詳細内容は、各イベントページの下部を参照してください。</p>
+        </div>
+    </div>
+    {{/showEvents}}
+
+    {{#others}}
+    <div class="list-group">
+        <h2 class="no-toc-title">その他</h2>
+        <div class="other-campaigns-list">
+            {{#othersList}}
+            <div>
+                <a href="#lgst/{{originalIndex}}" class="campaign-text-link">{{name}}</a>
+                <span class="other-campaigns-note">（参照: <a href="https://x.com/mahoyaku_info/status/1227880843420454913" target="_blank" rel="noopener noreferrer">公式X</a>）</span>
+            </div>
+            {{/othersList}}
+        </div>
+    </div>
+    {{/others}}
+</div>
+<div class="back-links">
+    <a href="#" class="back-link">← トップへ戻る</a>
+</div>
