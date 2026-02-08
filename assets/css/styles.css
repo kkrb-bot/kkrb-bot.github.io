@@ -1063,7 +1063,9 @@ html[data-theme="dark"] .back-to-top-link:hover {
 
     .ep-spot-item img,
     .ep-chara-item img {
-        max-width: 85px !important;
+        width: 100% !important;
+        height: auto !important;
+        max-width: none !important;
     }
 }
 
@@ -1330,6 +1332,13 @@ html[data-theme="dark"] .campaign-item:hover img {
     .ep-spot-grid,
     .ep-chara-grid {
         grid-template-columns: repeat(4, 1fr);
+    }
+
+    .ep-spot-item img,
+    .ep-chara-item img {
+        width: 100%;
+        height: auto;
+        max-width: none;
     }
 }
 
