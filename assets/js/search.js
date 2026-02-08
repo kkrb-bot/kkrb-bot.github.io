@@ -233,7 +233,6 @@ const characters = [
     { ja: 'ルチル', en: 'Rutile' },
     { ja: 'レノックス', en: 'Lennox' },
     { ja: 'ミチル', en: 'Mitile' },
-    { ja: 'レノ', en: 'Lenno' }
 ];
 
 const CHARACTER_JA_MAP = {};
@@ -272,7 +271,6 @@ const charactersByCountry = {
         { ja: 'ルチル', en: 'Rutile' },
         { ja: 'レノックス', en: 'Lennox' },
         { ja: 'ミチル', en: 'Mitile' },
-        { ja: 'レノ', en: 'Lenno' }
     ],
     'その他': [
         { ja: '晶', en: 'Akira' },

@@ -100,7 +100,6 @@ const CHARACTER_KATAKANA_MAP = {
     'Rutile': 'ルチル',
     'Lennox': 'レノックス',
     'Mitile': 'ミチル',
-    'Lenno': 'レノ'
 };
 
 const LOVE_CHARACTERS_BY_COUNTRY = {
