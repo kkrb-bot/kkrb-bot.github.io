@@ -198,7 +198,7 @@ async function renderEventStory(scenario, eventId, episodeIndex) {
 
         html += `<h2 class="no-toc-title">${h2Text}</h2>`;
 
-        const bannerPath = `assets/images/event_banners/event_long_banner-event_banner_${eventId}.png`;
+        const bannerPath = `assets/images/event_banners/event_banner_${eventId}.png`;
         html += `<div class="event-banner-container">
             <img src="${bannerPath}" class="event-banner-img" />
         </div>`;
