@@ -77,14 +77,25 @@ function initCampaignStoryInteraction(container, dialogue) {
  * @returns {Object} { h2Text, h3Texts }
  */
 function analyzeTitles(scenarios, defaultH2) {
-    const titles = scenarios.map(s => s.Title).filter(t => t && t.includes('|'));
-    if (titles.length < 2) {
-        // 2つ未満の場合はデフォルト
+    // Normalize titles: treat <br> (and variants) as equivalent to '|' so either can be used as a separator.
+    const normalize = t => t ? t.replace(/<br\s*\/?>/gi, '|') : t;
+    const normalized = scenarios.map(s => s.Title ? normalize(s.Title) : null);
+
+    // Build parts for each title (split by '|' and remove empty tokens)
+    const parts = normalized.map(t => {
+        if (!t) return [];
+        return t.split('|').map(p => p.trim()).filter(p => p !== '');
+    });
+
+    // If fewer than 2 titles contain a separator (i.e. parts with >1 element), fallback to defaults
+    const multiPartCount = parts.filter(p => p.length > 1).length;
+    if (multiPartCount < 2) {
         return {
             h2Text: defaultH2,
             h3Texts: scenarios.map((s, i) => {
-                if (s.Title && s.Title.includes('|')) {
-                    return s.Title.split('|')[0].trim();
+                const p = parts[i];
+                if (p && p.length > 0) {
+                    return p[0];
                 } else if (s.Title) {
                     return s.Title;
                 } else {
@@ -94,8 +105,7 @@ function analyzeTitles(scenarios, defaultH2) {
         };
     }
 
-    const parts = titles.map(t => t.split('|').map(p => p.trim()));
-    const prefixes = parts.map(p => p[0]);
+    const prefixes = parts.map(p => p[0] || '');
     const suffixes = parts.map(p => p[1] || '');
 
     const allPrefixesSame = prefixes.every(p => p === prefixes[0]);
@@ -106,34 +116,28 @@ function analyzeTitles(scenarios, defaultH2) {
 
     if (allPrefixesSame && !allSuffixesSame) {
         // |前が全て同じ、|後が違う → h2 = |前, h3 = |後
-        h2Text = prefixes[0];
+        h2Text = prefixes[0] || defaultH2;
         h3Texts = scenarios.map((s, i) => {
-            if (s.Title && s.Title.includes('|')) {
-                return s.Title.split('|')[1].trim() || `ストーリー${i + 1}`;
-            } else {
-                return s.Title || `ストーリー${i + 1}`;
-            }
+            const p = parts[i];
+            if (p && p.length > 1) return p[1];
+            if (p && p.length === 1) return p[0];
+            return s.Title || `ストーリー${i + 1}`;
         });
     } else if (!allPrefixesSame && allSuffixesSame) {
         // |前が違う、|後が同じ → h2 = |後, h3 = |前
-        h2Text = suffixes[0];
+        h2Text = suffixes[0] || defaultH2;
         h3Texts = scenarios.map((s, i) => {
-            if (s.Title && s.Title.includes('|')) {
-                return s.Title.split('|')[0].trim();
-            } else {
-                return s.Title || `ストーリー${i + 1}`;
-            }
+            const p = parts[i];
+            if (p && p.length > 0) return p[0];
+            return s.Title || `ストーリー${i + 1}`;
         });
     } else {
-        // デフォルト
+        // デフォルト: use first part (or full title) as h3
         h3Texts = scenarios.map((s, i) => {
-            if (s.Title && s.Title.includes('|')) {
-                return s.Title.split('|')[0].trim();
-            } else if (s.Title) {
-                return s.Title;
-            } else {
-                return `ストーリー${i + 1}`;
-            }
+            const p = parts[i];
+            if (p && p.length > 0) return p[0];
+            if (s.Title) return s.Title;
+            return `ストーリー${i + 1}`;
         });
     }
 
