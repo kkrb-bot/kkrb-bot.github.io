@@ -13,8 +13,9 @@ let currentCardLoadId = null;
 async function loadCardScenario(displayId) {
     const actualId = getActualCardId(displayId);
     const scenarios = [];
+    const maxVariant = Number(actualId) === 337 ? 5 : 3;
 
-    for (let variantNum = 1; variantNum <= 3; variantNum++) {
+    for (let variantNum = 1; variantNum <= maxVariant; variantNum++) {
         const path = `public/scenario/card/scenario_card_${actualId}-${variantNum}.json`;
         const scenario = await loadScenarioData(path);
         if (scenario) {
