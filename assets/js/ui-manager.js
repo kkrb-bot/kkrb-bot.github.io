@@ -240,11 +240,14 @@ class UIManager {
     }
 
     /**
-     * Generate card list
+     * Generate card list with pagination
+     * @param {number} page - Page number (1-based)
      * @returns {Promise<string>} HTML content
      */
-    async generateCardList() {
+    async generateCardList(page = 1) {
         const cards = [];
+        const itemsPerPage = 220;
+        let totalPages = 1;
         
         try {
             const response = await fetch('public/scenario/info.json');
@@ -252,7 +255,11 @@ class UIManager {
             const info = await response.json();
             const maxDisplayId = info['card-max'] - 19;
             
-            for (let displayId = maxDisplayId; displayId >= 1; displayId--) {
+            totalPages = Math.ceil(maxDisplayId / itemsPerPage);
+            const startId = maxDisplayId - (page - 1) * itemsPerPage;
+            const endId = Math.max(1, startId - itemsPerPage + 1);
+
+            for (let displayId = startId; displayId >= endId; displayId--) {
                 const actualId = getActualCardId(displayId);
                 cards.push({
                     displayId,
@@ -263,7 +270,59 @@ class UIManager {
             console.error('Error generating card list:', error);
         }
 
-        return await templateManager.renderTemplate('card-list', { cards });
+        let html = await templateManager.renderTemplate('card-list', { cards });
+        
+        if (totalPages > 1) {
+            const paginationHtml = this.generatePagination(page, totalPages, 'card');
+            html = paginationHtml + html + paginationHtml;
+        }
+        
+        return html;
+    }
+
+    /**
+     * Generate pagination controls with a grid layout for numbers
+     * @param {number} currentPage - Current page number
+     * @param {number} totalPages - Total number of pages
+     * @param {string} baseHash - Base hash for links
+     * @returns {string} HTML content
+     */
+    generatePagination(currentPage, totalPages, baseHash) {
+        let html = '<div class="pagination-wrapper">';
+        
+        // Navigation: Previous
+        html += '<div class="pagination-nav">';
+        if (currentPage > 1) {
+            const prevHash = currentPage === 2 ? `#${baseHash}` : `#${baseHash}/p${currentPage - 1}`;
+            html += `<a href="${prevHash}" class="pagination-link nav-btn">&laquo; 前へ</a>`;
+        } else {
+            html += `<span class="pagination-link nav-btn disabled">&laquo; 前へ</span>`;
+        }
+        html += '</div>';
+
+        // Page numbers grid
+        html += '<div class="pagination-number-grid">';
+        for (let i = 1; i <= totalPages; i++) {
+            const pageHash = i === 1 ? `#${baseHash}` : `#${baseHash}/p${i}`;
+            if (i === currentPage) {
+                html += `<span class="pagination-link active">${i}</span>`;
+            } else {
+                html += `<a href="${pageHash}" class="pagination-link">${i}</a>`;
+            }
+        }
+        html += '</div>';
+
+        // Navigation: Next
+        html += '<div class="pagination-nav">';
+        if (currentPage < totalPages) {
+            html += `<a href="#${baseHash}/p${currentPage + 1}" class="pagination-link nav-btn">次へ &raquo;</a>`;
+        } else {
+            html += `<span class="pagination-link nav-btn disabled">次へ &raquo;</span>`;
+        }
+        html += '</div>';
+
+        html += '</div>';
+        return html;
     }
 
     /**
@@ -409,12 +468,22 @@ class UIManager {
     }
 
     /**
-     * Generate full EP card list view
+     * Generate full EP card list view with pagination
+     * @param {number} page - Page number (1-based)
      * @returns {Promise<string>} HTML content
      */
-    async generateEpCardListView() {
+    async generateEpCardListView(page = 1) {
+        const itemsPerPage = 220;
+        const allCards = await this.generateEpCardList();
+        const totalPages = Math.ceil(allCards.length / itemsPerPage);
+        
+        const startIndex = (page - 1) * itemsPerPage;
+        const cards = allCards.slice(startIndex, startIndex + itemsPerPage);
+
         let html = '<div class="ep-card-list-container">';
-        const cards = await this.generateEpCardList();
+        
+        const paginationHtml = totalPages > 1 ? this.generatePagination(page, totalPages, 'ep/card') : '';
+        html += paginationHtml;
         
         html += '<div class="list-grid ep-card-grid">';
         cards.forEach(card => {
@@ -423,6 +492,8 @@ class UIManager {
             </a>`;
         });
         html += '</div>';
+        
+        html += paginationHtml;
         html += '</div>';
         html += `<div class="back-links">
             <a href="#ep" class="back-link">← エピソードのトップへ戻る</a>

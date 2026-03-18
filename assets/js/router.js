@@ -202,7 +202,12 @@ class Router {
                 break;
             case 'card':
                 if (subpage) {
-                    initCardScenario(parseInt(subpage), () => this.updateTitleAfterLoad());
+                    if (subpage.startsWith('p')) {
+                        const pageNum = parseInt(subpage.substring(1)) || 1;
+                        showCardList(pageNum);
+                    } else {
+                        initCardScenario(parseInt(subpage), () => this.updateTitleAfterLoad());
+                    }
                 } else {
                     showCardList();
                 }
@@ -219,9 +224,15 @@ class Router {
                         initEpCharaScenario(parseInt(parts[1]), () => this.updateTitleAfterLoad());
                     } else if (parts[0] === 'card') {
                         if (parts[1]) {
-                            // Show individual card scenario
-                            this.setHeaderTitle('カードエピソード');
-                            initEpCardScenario(parseInt(parts[1]), () => this.updateTitleAfterLoad());
+                            if (parts[1].startsWith('p')) {
+                                const pageNum = parseInt(parts[1].substring(1)) || 1;
+                                this.setHeaderTitle('カードエピソード');
+                                this.showEpCardList(pageNum);
+                            } else {
+                                // Show individual card scenario
+                                this.setHeaderTitle('カードエピソード');
+                                initEpCardScenario(parseInt(parts[1]), () => this.updateTitleAfterLoad());
+                            }
                         } else {
                             // Show card list
                             this.setHeaderTitle('カードエピソード');
@@ -332,10 +343,10 @@ class Router {
     /**
      * EP カードリストを表示
      */
-    async showEpCardList() {
+    async showEpCardList(page = 1) {
         const epContent = document.querySelector('#ep-content');
         if (epContent && uiManager) {
-            epContent.innerHTML = await uiManager.generateEpCardListView();
+            epContent.innerHTML = await uiManager.generateEpCardListView(page);
         }
         if (typeof toc !== 'undefined' && toc) {
             toc.destroy();

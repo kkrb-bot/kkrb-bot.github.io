@@ -125,14 +125,15 @@ function renderCardStory(scenarios, displayId, actualId) {
 /**
  * カードリストを表示
  * assets/images/card_icon ディレクトリからカードアイコンを取得してリストを生成
+ * @param {number} page - ページ番号
  */
-async function showCardList() {
+async function showCardList(page = 1) {
     const cardContent = document.querySelector('#card-content');
     if (!cardContent || !uiManager) {
         return;
     }
 
-    cardContent.innerHTML = await uiManager.generateCardList();
+    cardContent.innerHTML = await uiManager.generateCardList(page);
 
     if (typeof toc !== 'undefined' && toc) {
         toc.destroy();
