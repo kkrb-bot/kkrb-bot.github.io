@@ -8,6 +8,24 @@ let currentEventLoadId = null;
 // イベントストーリー設定
 let eventStoryConfig = null;
 
+function createEventStoryConfig(eventMax = 159) {
+    return {
+        eventsByYear: {
+            2019: { start: 1, end: 2 },
+            2020: { start: 3, end: 26 },
+            2021: { start: 27, end: 49 },
+            2022: { start: 50, end: 70 },
+            2023: { start: 71, end: 89 },
+            2024: { start: 90, end: 112 },
+            2025: { start: 113, end: 136 },
+            2026: { start: 137, end: eventMax }
+        },
+        get maxEventId() {
+            return Math.max(...Object.values(this.eventsByYear).map(range => range.end));
+        }
+    };
+}
+
 /**
  * イベントストーリー設定を読み込む
  * @returns {Promise<Object>} イベントストーリー設定
@@ -19,62 +37,19 @@ async function loadEventStoryConfig() {
 
     try {
         const response = await fetch('public/scenario/info.json');
+        const data = await response.json();
+        const eventMax = Number(data['event-max']);
+
         if (!response.ok) {
             console.error('Failed to load info.json:', response.statusText);
-            // フォールバックとしてデフォルト値を使用
-            eventStoryConfig = {
-                eventsByYear: {
-                    2019: { start: 1, end: 2 },
-                    2020: { start: 3, end: 26 },
-                    2021: { start: 27, end: 49 },
-                    2022: { start: 50, end: 70 },
-                    2023: { start: 71, end: 89 },
-                    2024: { start: 90, end: 112 },
-                    2025: { start: 113, end: 136 },
-                    2026: { start: 137, end: 159 }
-                },
-                get maxEventId() {
-                    return Math.max(...Object.values(this.eventsByYear).map(range => range.end));
-                }
-            };
-            return eventStoryConfig;
         }
-        const data = await response.json();
-        const eventMax = data['event-max'];
-        eventStoryConfig = {
-            eventsByYear: {
-                2019: { start: 1, end: 2 },
-                2020: { start: 3, end: 26 },
-                2021: { start: 27, end: 49 },
-                2022: { start: 50, end: 70 },
-                2023: { start: 71, end: 89 },
-                2024: { start: 90, end: 112 },
-                2025: { start: 113, end: 136 },
-                2026: { start: 137, end: eventMax }
-            },
-            get maxEventId() {
-                return Math.max(...Object.values(this.eventsByYear).map(range => range.end));
-            }
-        };
+
+        eventStoryConfig = createEventStoryConfig(Number.isFinite(eventMax) ? eventMax : 159);
         return eventStoryConfig;
     } catch (error) {
         console.error('Error loading info.json:', error);
         // フォールバック
-        eventStoryConfig = {
-            eventsByYear: {
-                2019: { start: 1, end: 2 },
-                2020: { start: 3, end: 26 },
-                2021: { start: 27, end: 49 },
-                2022: { start: 50, end: 70 },
-                2023: { start: 71, end: 89 },
-                2024: { start: 90, end: 112 },
-                2025: { start: 113, end: 136 },
-                2026: { start: 137, end: 139 }
-            },
-            get maxEventId() {
-                return Math.max(...Object.values(this.eventsByYear).map(range => range.end));
-            }
-        };
+        eventStoryConfig = createEventStoryConfig(159);
         return eventStoryConfig;
     }
 }
