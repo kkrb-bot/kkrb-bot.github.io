@@ -115,8 +115,8 @@ async function loadEventMapping() {
         
         // Reverse mapping: loginId -> eventId
         for (const [eventIdStr, eventData] of Object.entries(eventMapping)) {
-            if (eventData.loginStories && Array.isArray(eventData.loginStories)) {
-                eventData.loginStories.forEach(loginId => {
+            if (eventData.lgstList && Array.isArray(eventData.lgstList)) {
+                eventData.lgstList.forEach(loginId => {
                     eventLoginIdToEventId[loginId.toString()] = parseInt(eventIdStr);
                 });
             }
@@ -125,8 +125,8 @@ async function loadEventMapping() {
         // Load titles for all event scenarios
         const titlePromises = [];
         for (const [eventIdStr, eventData] of Object.entries(eventMapping)) {
-            if (eventData.loginStories && Array.isArray(eventData.loginStories)) {
-                for (const loginId of eventData.loginStories) {
+            if (eventData.lgstList && Array.isArray(eventData.lgstList)) {
+                for (const loginId of eventData.lgstList) {
                     const promise = fetch(`public/scenario/login/event/scenario_login_${loginId}.json`)
                         .then(response => response.ok ? response.json() : null)
                         .then(data => {

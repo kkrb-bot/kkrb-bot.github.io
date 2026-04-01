@@ -31,7 +31,7 @@ async function loadEventStoryConfig() {
                     2023: { start: 71, end: 89 },
                     2024: { start: 90, end: 112 },
                     2025: { start: 113, end: 136 },
-                    2026: { start: 137, end: 139 }
+                    2026: { start: 137, end: 159 }
                 },
                 get maxEventId() {
                     return Math.max(...Object.values(this.eventsByYear).map(range => range.end));
@@ -257,7 +257,7 @@ function renderLoginStory(scenario) {
 async function getLoginStoryIds(eventId) {
     const data = await loadEventLoginStoryData();
     const eventData = data[eventId];
-    return eventData ? eventData.loginStories : [];
+    return eventData ? eventData.lgstList : [];
 }
 
 /**
