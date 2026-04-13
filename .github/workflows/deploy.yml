@@ -37,10 +37,19 @@ jobs:
         run: |
           python3 scripts/deploy.py
 
+      - name: Verify build artifacts
+        run: |
+          echo "=== Checking public directory ==="
+          ls -lah public/ || echo "public directory not found!"
+          echo "=== JSON files in public/scenario ==="
+          find public/scenario -type f -name "*.json" | head -20
+          echo "=== JSON files in public/data/chunks ==="
+          find public/data/chunks -type f | head -10
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5.0.0
         with:
-          path: '.'
+          path: './public'
 
   deploy:
     environment:
