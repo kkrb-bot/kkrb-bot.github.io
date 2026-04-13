@@ -138,6 +138,33 @@ const MAIN_STORY_CONFIG = {
 };
 
 let EVENT_EPISODE_LIST = null;
+let CAULIS_EVENT_IDS = null;
+let EVENT_SCENARIO_DATA_PROMISE = null;
+
+/**
+ * event.json を読み込み
+ * @returns {Promise<Object>} event.json データ
+ */
+async function loadEventScenarioData() {
+    if (EVENT_SCENARIO_DATA_PROMISE !== null) {
+        return EVENT_SCENARIO_DATA_PROMISE;
+    }
+
+    EVENT_SCENARIO_DATA_PROMISE = fetch('public/scenario/event.json')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to load event.json: ${response.status}`);
+            }
+            return response.json();
+        })
+        .catch(error => {
+            // 読み込み失敗時は次回再試行できるようにキャッシュを破棄
+            EVENT_SCENARIO_DATA_PROMISE = null;
+            throw error;
+        });
+
+    return EVENT_SCENARIO_DATA_PROMISE;
+}
 
 /**
  * イベントエピソードリストを非同期で読み込み
@@ -148,18 +175,39 @@ async function loadEventEpisodeList() {
     }
     
     try {
-        const response = await fetch('public/scenario/event.json');
-        if (!response.ok) {
-            throw new Error(`Failed to load event.json: ${response.status}`);
-        }
-        const data = await response.json();
+        const data = await loadEventScenarioData();
         EVENT_EPISODE_LIST = data.episodeList || {};
+        CAULIS_EVENT_IDS = (data.caulisList || []).map(Number);
         return EVENT_EPISODE_LIST;
     } catch (error) {
         console.error('Error loading event episode list:', error);
         // フォールバックとして空のオブジェクトを使用
         EVENT_EPISODE_LIST = {};
+        CAULIS_EVENT_IDS = [];
         return EVENT_EPISODE_LIST;
+    }
+}
+
+/**
+ * カウリスイベントID一覧を非同期で読み込み
+ */
+async function loadCaulisEventIds() {
+    if (CAULIS_EVENT_IDS !== null) {
+        return CAULIS_EVENT_IDS;
+    }
+
+    try {
+        const data = await loadEventScenarioData();
+        CAULIS_EVENT_IDS = (data.caulisList || []).map(Number);
+        // 片方の読み込みで両方のキャッシュを埋める
+        if (EVENT_EPISODE_LIST === null) {
+            EVENT_EPISODE_LIST = data.episodeList || {};
+        }
+        return CAULIS_EVENT_IDS;
+    } catch (error) {
+        console.error('Error loading caulis event list:', error);
+        CAULIS_EVENT_IDS = [];
+        return CAULIS_EVENT_IDS;
     }
 }
 
@@ -190,8 +238,6 @@ function getDisplayCardId(actualId) {
     }
     return actualId;
 }
-
-const CAULIS_EVENT_IDS = [71, 84, 86, 100, 105, 128, 132, 138, 144];
 
 const EP_SPOT_CONFIG = {
     minSpotId: 1,

@@ -90,8 +90,9 @@ async function loadEventLoginStoryData() {
  */
 async function loadEventScenario(eventId, episodeNum) {
     let path;
+    const caulisEventIds = await loadCaulisEventIds();
 
-    if (CAULIS_EVENT_IDS.includes(eventId)) {
+    if (caulisEventIds.includes(eventId)) {
         path = API_PATHS.caulisScenario(eventId, episodeNum);
     } else {
         path = API_PATHS.eventScenario(eventId, episodeNum);
