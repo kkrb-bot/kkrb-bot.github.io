@@ -191,7 +191,7 @@ function getDisplayCardId(actualId) {
     return actualId;
 }
 
-const CAULIS_EVENT_IDS = [71, 84, 86, 100, 105, 128, 132, 138];
+const CAULIS_EVENT_IDS = [71, 84, 86, 100, 105, 128, 132, 138, 144];
 
 const EP_SPOT_CONFIG = {
     minSpotId: 1,
