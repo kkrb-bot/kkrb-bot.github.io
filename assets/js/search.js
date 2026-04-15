@@ -437,8 +437,8 @@ async function initSearchUI() {
             <div class="search-error-screen">
                 <div class="error-title"><strong>❌ 検索の初期化に失敗しました</strong></div>
                 <div class="error-content">
-                    <p>検索データの情報を取得できませんでした。ネットワーク接続を確認し、ページを更新してください。</p>
-                    <p>問題が解決しない場合は、管理人までご連絡ください。</p>
+                    <p>検索データの情報を取得できませんでした。ネットワーク接続を確認し、ページを更新してください。
+                    問題が解決しない場合は、お手数ですが管理人までお問い合わせください。</p>
                     <div class="error-actions">
                         <button onclick="location.reload()" class="btn-primary">ページを更新</button>
                     </div>
