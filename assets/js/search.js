@@ -456,6 +456,16 @@ async function initSearchUI() {
         // キャッシュがある場合は自動的に読み込む
         showLoadingUI();
         startBackgroundDataLoading();
+        // Wait for loading to complete then show form
+        if (dataLoadingPromise) {
+            dataLoadingPromise.then(() => {
+                // Ensure we are still on the search page
+                const searchPageContent = document.querySelector('[data-page="search"]');
+                if (searchPageContent && allDialogues.length > 0) {
+                    showSearchForm();
+                }
+            });
+        }
     } else {
         const sizeInfo = totalDataSizeText ? `<strong>${totalDataSizeText}</strong>の` : '';
         // キャッシュがない場合は警告を表示
