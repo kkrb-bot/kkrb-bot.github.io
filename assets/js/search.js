@@ -14,7 +14,7 @@ let searchWorker = null;
 // 設定変数（initSearchで初期化）
 let DATA_VERSION = '2026-02-05'; // デフォルト値
 let CHUNKS_BASE_URL = 'public/data/chunks'; // デフォルト値
-let TOTAL_DATA_SIZE_MB = 8.5; // デフォルト値、manifestから動的に取得
+let totalDataSizeText = ''; // 取得したデータサイズを保持
 
 // Campaign loginId to campaign index mapping
 let campaignLoginIdToIndex = null;
@@ -117,12 +117,13 @@ async function loadDataSizeFromManifest() {
         const manifestUrl = `${CHUNKS_BASE_URL}/manifest.json`;
         const response = await fetch(manifestUrl);
         if (!response.ok) {
-            console.warn('Failed to load manifest for data size, using default');
+            console.warn('Failed to load manifest for data size');
             return;
         }
         const manifest = await response.json();
         if (manifest.totalCompressedSize) {
-            TOTAL_DATA_SIZE_MB = (manifest.totalCompressedSize / 1024 / 1024).toFixed(1);
+            const sizeMB = (manifest.totalCompressedSize / 1024 / 1024).toFixed(1);
+            totalDataSizeText = `約${sizeMB}MB`;
         }
     } catch (error) {
         console.warn('Error loading data size from manifest:', error);
@@ -244,29 +245,6 @@ const charactersByCountry = {
 };
 
 /**
- * デバイスタイプを検出
- */
-function detectDeviceType() {
-    const userAgent = navigator.userAgent.toLowerCase();
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const maxDimension = Math.max(width, height);
-    
-    // スマートフォン判定（画面サイズが小さい、かつモバイルUA）
-    const isMobile = /mobile|android|iphone|ipod/.test(userAgent) && maxDimension < 768;
-    
-    // タブレット判定（中サイズの画面、またはiPad/Android tablet）
-    const isTablet = (/ipad|android/.test(userAgent) && !/mobile/.test(userAgent)) || 
-                     (maxDimension >= 768 && maxDimension < 1024);
-    
-    return {
-        isMobile,
-        isTablet,
-        isDesktop: !isMobile && !isTablet
-    };
-}
-
-/**
  * 検索機能を初期化
  */
 async function initSearch() {
@@ -278,15 +256,6 @@ async function initSearch() {
         
         // マニフェストからデータサイズを取得
         await loadDataSizeFromManifest();
-        
-        // デバイスタイプを検出
-        const device = detectDeviceType();
-        
-        // スマートフォンの場合は検索機能を無効化
-        if (device.isMobile) {
-            console.log('検索機能はスマートフォンでは利用できません');
-            return;
-        }
         
         // Initialize Web Worker
         if (!searchWorker) {
@@ -431,9 +400,6 @@ async function initSearchUI() {
     const searchPageContent = document.querySelector('[data-page="search"]');
     if (!searchPageContent) return;
 
-    // デバイスタイプを検出
-    const device = detectDeviceType();
-    
     // Preload mappings for better performance
     await Promise.all([
         loadCampaignMapping(),
@@ -446,19 +412,6 @@ async function initSearchUI() {
 
     const searchContainer = document.createElement('div');
     searchContainer.className = 'search-container';
-    
-    // スマートフォンの場合は検索機能を無効化
-    if (device.isMobile) {
-        searchContainer.innerHTML = `
-            <div class="search-disabled-notice">
-                <h3>📱 検索機能について</h3>
-                <p>検索機能はデータ量が大きいため、スマートフォンではご利用いただけません。</p>
-                <p>タブレットまたはPCでアクセスしてください。</p>
-            </div>
-        `;
-        searchPageContent.appendChild(searchContainer);
-        return;
-    }
     
     // データが既に読み込まれている場合は検索フォームを表示
     if (allDialogues.length > 0) {
@@ -480,12 +433,13 @@ async function initSearchUI() {
         showLoadingUI();
         startBackgroundDataLoading();
     } else {
+        const sizeInfo = totalDataSizeText ? `<strong>${totalDataSizeText}</strong>の` : '';
         // キャッシュがない場合は警告を表示
         searchContainer.innerHTML = `
             <div class="search-warning">
                 <div class="warning-title"><strong>⚠️ データ読み込みについて</strong></div>
                 <div class="warning-content">
-                    <p>検索機能を使用するには、約<strong>${TOTAL_DATA_SIZE_MB}MB</strong>のデータをダウンロードする必要があります。</p>
+                    <p>検索機能を使用するには、${sizeInfo}データをダウンロードする必要があります。</p>
                     <ul>
                         <li>初回読み込み時のみダウンロードが発生します</li>
                         <li>2回目以降はキャッシュから即座に読み込まれます</li>
@@ -852,9 +806,10 @@ function formatBytes(bytes) {
  * キャッシュクリア処理
  */
 async function handleClearCache() {
+    const sizePrompt = totalDataSizeText ? `約${totalDataSizeText}` : 'データ';
     const confirmed = confirm(
         'キャッシュをクリアしますか？\n\n' +
-        'クリア後、次回検索時に約' + TOTAL_DATA_SIZE_MB + 'MBのデータを再ダウンロードする必要があります。'
+        `クリア後、次回検索時に${sizePrompt}のデータを再ダウンロードする必要があります。`
     );
     
     if (!confirmed) return;
