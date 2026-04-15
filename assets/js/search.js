@@ -15,6 +15,7 @@ let searchWorker = null;
 let DATA_VERSION = '2026-02-05'; // デフォルト値
 let CHUNKS_BASE_URL = 'public/data/chunks'; // デフォルト値
 let totalDataSizeText = ''; // 取得したデータサイズを保持
+let manifestLoadError = false; // マニフェスト読み込み失敗フラグ
 
 // Campaign loginId to campaign index mapping
 let campaignLoginIdToIndex = null;
@@ -118,15 +119,18 @@ async function loadDataSizeFromManifest() {
         const response = await fetch(manifestUrl);
         if (!response.ok) {
             console.warn('Failed to load manifest for data size');
+            manifestLoadError = true;
             return;
         }
         const manifest = await response.json();
+        manifestLoadError = false;
         if (manifest.totalCompressedSize) {
             const sizeMB = (manifest.totalCompressedSize / 1024 / 1024).toFixed(1);
             totalDataSizeText = `約${sizeMB}MB`;
         }
     } catch (error) {
         console.warn('Error loading data size from manifest:', error);
+        manifestLoadError = true;
     }
 }
 
@@ -427,6 +431,22 @@ async function initSearchUI() {
     
     // キャッシュの状態を確認
     const hasCachedData = await checkCachedData();
+    
+    if (manifestLoadError && !hasCachedData) {
+        searchContainer.innerHTML = `
+            <div class="search-error-screen">
+                <div class="error-title"><strong>❌ 検索の初期化に失敗しました</strong></div>
+                <div class="error-content">
+                    <p>検索データの情報を取得できませんでした。ネットワーク接続を確認し、ページを更新してください。</p>
+                    <div class="error-actions">
+                        <button onclick="location.reload()" class="btn-primary">ページを更新</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        searchPageContent.appendChild(searchContainer);
+        return;
+    }
     
     if (hasCachedData) {
         // キャッシュがある場合は自動的に読み込む
