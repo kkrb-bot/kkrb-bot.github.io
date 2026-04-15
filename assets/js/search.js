@@ -470,16 +470,8 @@ async function initSearchUI() {
         // キャッシュがある場合は自動的に読み込む
         showLoadingUI();
         startBackgroundDataLoading();
-        // Wait for loading to complete then show form
-        if (dataLoadingPromise) {
-            dataLoadingPromise.then(() => {
-                // Ensure we are still on the search page
-                const searchPageContent = document.querySelector('[data-page="search"]');
-                if (searchPageContent && allDialogues.length > 0) {
-                    showSearchForm();
-                }
-            });
-        }
+        // The transition to search form will be handled by the worker 'complete' handler
+        // which calls updateLoadingStatus -> showSearchForm
     } else {
         const sizeInfo = totalDataSizeText ? `<strong>${totalDataSizeText}</strong>の` : '';
         // キャッシュがない場合は警告を表示
@@ -727,6 +719,11 @@ function generateSpeakersHTML() {
 async function showSearchForm() {
     const searchPageContent = document.querySelector('[data-page="search"]');
     if (!searchPageContent) return;
+    
+    // 防御的措置：既にフォームが表示されている場合は何もしない
+    if (searchPageContent.querySelector('.search-form') && allDialogues.length > 0) {
+        return;
+    }
     
     searchPageContent.innerHTML = '';
     
