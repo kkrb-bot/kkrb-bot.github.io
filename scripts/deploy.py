@@ -92,14 +92,14 @@ def minify_scenario_files(source_dir: Path, target_dir: Path) -> bool:
     print(f"✓ Minified {success_count}/{len(json_files)} JSON files")
     return success_count == len(json_files)
 
-def generate_manifests() -> bool:
+def generate_manifests(source_dir: Path) -> bool:
     """Generate manifests using the generation script"""
-    print(f"\n📋 Generating manifests...")
+    print(f"\n📋 Generating manifests from {source_dir}...")
     
     try:
         # Call the build_search_chunks.py script
         result = subprocess.run(
-            ['python3', 'scripts/build_search_chunks.py'],
+            ['python3', 'scripts/build_search_chunks.py', '--source', str(source_dir)],
             check=True,
             capture_output=True,
             text=True
@@ -114,14 +114,14 @@ def generate_manifests() -> bool:
         print(f"✗ Failed to generate manifests: {e}")
         return False
 
-def generate_bundles() -> bool:
+def generate_bundles(source_dir: Path) -> bool:
     """Generate data bundles for faster loading"""
-    print(f"\n📦 Generating data bundles...")
+    print(f"\n📦 Generating data bundles from {source_dir}...")
     
     try:
         # Call the build_bundles.py script
         result = subprocess.run(
-            ['python3', 'scripts/build_bundles.py'],
+            ['python3', 'scripts/build_bundles.py', '--source', str(source_dir)],
             check=True,
             capture_output=True,
             text=True
@@ -167,46 +167,39 @@ def main():
         print(f"\n📁 Contents of {temp_dir}:")
         for item in temp_dir.iterdir():
             if item.is_dir():
-                json_count = len(list(item.glob('*.json')))
+                json_count = len(list(item.glob('**/*.json')))
                 print(f"   📂 {item.name}/ ({json_count} JSON files)")
             else:
                 print(f"   📄 {item.name}")
         
-        # Step 2: Process each scenario type
-        # Dynamically get all subdirectories as scenario types
-        scenario_types = [d.name for d in temp_dir.iterdir() if d.is_dir()]
+        # Step 2: Copy only essential metadata files to public/scenario
+        print(f"\n📂 Syncing metadata to {target_dir}...")
+        target_dir.mkdir(parents=True, exist_ok=True)
+        metadata_files = [
+            'info.json',
+            'event.json',
+            'card-ep.json',
+            'login/campaign.json',
+            'login/event.json'
+        ]
         
-        for scenario_type in scenario_types:
-            source_subdir = temp_dir / scenario_type
-            target_subdir = target_dir / scenario_type
-            
-            if source_subdir.exists():
-                print(f"\n📂 Processing {scenario_type}...")
-                if not minify_scenario_files(source_subdir, target_subdir):
-                    print(f"⚠️  Failed to minify some files in {scenario_type}")
+        for meta_path in metadata_files:
+            src_file = temp_dir / meta_path
+            dst_file = target_dir / meta_path
+            if src_file.exists():
+                dst_file.parent.mkdir(parents=True, exist_ok=True)
+                minify_json(src_file, dst_file)
+                print(f"✓ Minified and copied {meta_path}")
             else:
-                print(f"⚠️  Source directory not found: {source_subdir}")
+                print(f"⚠️ Metadata file not found: {meta_path}")
         
-        # Step 2.5: Process root level JSON files (e.g., info.json)
-        print(f"\n📂 Processing root level JSON files...")
-        root_json_files = list(temp_dir.glob('*.json'))
-        if root_json_files:
-            for json_file in root_json_files:
-                output_file = target_dir / json_file.name
-                if minify_json(json_file, output_file):
-                    print(f"✓ Minified {json_file.name}")
-                else:
-                    print(f"✗ Failed to minify {json_file.name}")
-        else:
-            print("⚠️  No root level JSON files found")
-        
-        # Step 3: Generate manifests
-        if not generate_manifests():
+        # Step 3: Generate manifests from temp_dir
+        if not generate_manifests(temp_dir):
             print("❌ Failed to generate manifests")
             return 1
 
-        # Step 4: Generate data bundles
-        if not generate_bundles():
+        # Step 4: Generate data bundles from temp_dir
+        if not generate_bundles(temp_dir):
             print("❌ Failed to generate bundles")
             return 1
         

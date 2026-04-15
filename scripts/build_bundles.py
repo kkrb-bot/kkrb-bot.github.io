@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os
+import argparse
 import json
 from pathlib import Path
 
@@ -12,7 +12,7 @@ def save_json(data, path):
     with open(path, 'w', encoding='utf-8') as f: json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
 
 def build_main_story_bundles(scenario_dir, bundle_dir):
-    print("Building Main Story bundles...")
+    print(f"Building Main Story bundles from {scenario_dir}...")
     main_dir = scenario_dir / 'main'
     if not main_dir.exists(): return
     chapters = {}
@@ -26,7 +26,7 @@ def build_main_story_bundles(scenario_dir, bundle_dir):
         save_json([episodes[num] for num in sorted(episodes.keys())], bundle_dir / 'main' / f'chapter_{chapter_num}.json')
 
 def build_campaign_bundles(scenario_dir, bundle_dir):
-    print("Building Campaign bundles...")
+    print(f"Building Campaign bundles from {scenario_dir}...")
     campaign_file = scenario_dir / 'login' / 'campaign.json'
     if not campaign_file.exists(): return
     campaigns = load_json(campaign_file)
@@ -37,7 +37,7 @@ def build_campaign_bundles(scenario_dir, bundle_dir):
         if bundle_data: save_json(bundle_data, bundle_dir / 'campaign' / f'campaign_{i}.json')
 
 def build_event_bundles(scenario_dir, bundle_dir):
-    print("Building Event bundles...")
+    print(f"Building Event bundles from {scenario_dir}...")
     event_meta = load_json(scenario_dir / 'event.json') or {}
     login_event_meta = load_json(scenario_dir / 'login' / 'event.json') or {}
     episode_list_map = event_meta.get('episodeList', {})
@@ -68,7 +68,7 @@ def build_event_bundles(scenario_dir, bundle_dir):
         if bundle['episodes'] or bundle['login']: save_json(bundle, bundle_dir / 'event' / f'event_{event_id}.json')
 
 def build_love_bundles(scenario_dir, bundle_dir):
-    print("Building Love bundles...")
+    print(f"Building Love bundles from {scenario_dir}...")
     love_dir = scenario_dir / 'love'
     if not love_dir.exists(): return
     characters = {}
@@ -82,7 +82,7 @@ def build_love_bundles(scenario_dir, bundle_dir):
         save_json([episodes[num] for num in sorted(episodes.keys())], bundle_dir / 'love' / f'character_{cid}.json')
 
 def build_ep_bundles(scenario_dir, bundle_dir):
-    print("Building Ep bundles...")
+    print(f"Building Ep bundles from {scenario_dir}...")
     ep_dir = scenario_dir / 'ep'
     if not ep_dir.exists(): return
     # Ep Spot
@@ -123,7 +123,7 @@ def build_ep_bundles(scenario_dir, bundle_dir):
                     save_json([episodes[num] for num in sorted(episodes.keys())], bundle_dir / 'ep' / 'special' / f'special_{d}.json')
 
 def build_card_bundles(scenario_dir, bundle_dir):
-    print("Building Card bundles...")
+    print(f"Building Card bundles from {scenario_dir}...")
     card_dir = scenario_dir / 'card'
     if not card_dir.exists(): return
     cards = {}
@@ -137,8 +137,18 @@ def build_card_bundles(scenario_dir, bundle_dir):
         save_json([{'variantNum': v, 'data': variants[v]} for v in sorted(variants.keys())], bundle_dir / 'card' / f'card_{cid}.json')
 
 def main():
-    scenario_dir, bundle_dir = Path('public/scenario'), Path('public/data/bundles')
-    if not scenario_dir.exists(): return
+    parser = argparse.ArgumentParser(description='Build scenario bundles')
+    parser.add_argument('--source', type=str, default='public/scenario', help='Source directory of scenario files')
+    parser.add_argument('--output', type=str, default='public/data/bundles', help='Output directory for bundles')
+    args = parser.parse_args()
+
+    scenario_dir = Path(args.source)
+    bundle_dir = Path(args.output)
+    
+    if not scenario_dir.exists():
+        print(f"Error: {scenario_dir} directory not found")
+        return
+
     build_main_story_bundles(scenario_dir, bundle_dir)
     build_campaign_bundles(scenario_dir, bundle_dir)
     build_event_bundles(scenario_dir, bundle_dir)

@@ -47,9 +47,8 @@ def extract_dialogues_recursive(dialogue_list, scenario_type, scenario_id, all_d
                     if isinstance(branch_dialogues, list):
                         extract_dialogues_recursive(branch_dialogues, scenario_type, scenario_id, all_dialogues, title)
 
-def load_all_dialogues():
+def load_all_dialogues(base_path: Path):
     """Load all dialogue data from scenario files"""
-    base_path = Path('public/scenario')
     types = ['main', 'card', 'event', 'love', 'caulis']
     special_types = ['ep', 'campaign', 'login-event']
     
@@ -229,9 +228,8 @@ def split_into_chunks(dialogues, chunk_size_bytes):
     
     return chunks
 
-def compress_and_save_chunks(chunks, event_names, version):
+def compress_and_save_chunks(chunks, event_names, version, output_dir: Path):
     """Compress chunks with brotli and save to disk"""
-    output_dir = Path('public/data/chunks')
     output_dir.mkdir(parents=True, exist_ok=True)
     
     chunk_manifest = {
@@ -301,21 +299,31 @@ def compress_and_save_chunks(chunks, event_names, version):
     print(f"Overall compression: {(1 - total_compressed / total_uncompressed) * 100:.1f}%")
     print(f"Manifest saved to: {manifest_path}")
 
+import argparse
+from pathlib import Path
+
 def main():
     """Main entry point"""
+    parser = argparse.ArgumentParser(description='Build search data chunks')
+    parser.add_argument('--source', type=str, default='public/scenario', help='Source directory of scenario files')
+    parser.add_argument('--output', type=str, default='public/data/chunks', help='Output directory for chunks')
+    args = parser.parse_args()
+
     # Get version from config or use current date
     version = datetime.now().strftime('%Y-%m-%d')
     
-    print("Loading all scenario dialogues...")
-    dialogues, event_names = load_all_dialogues()
+    # Override base_path inside load_all_dialogues if necessary, 
+    # but more cleanly, let's pass it
+    print(f"Loading all scenario dialogues from {args.source}...")
+    dialogues, event_names = load_all_dialogues(Path(args.source))
     print(f"Loaded {len(dialogues)} dialogues from {len(event_names)} events")
     
     print(f"\nSplitting into ~{CHUNK_SIZE_BYTES / 1024 / 1024:.1f}MB chunks...")
     chunks = split_into_chunks(dialogues, CHUNK_SIZE_BYTES)
     print(f"Created {len(chunks)} chunks")
     
-    print("\nCompressing and saving chunks...")
-    compress_and_save_chunks(chunks, event_names, version)
+    print(f"\nCompressing and saving chunks to {args.output}...")
+    compress_and_save_chunks(chunks, event_names, version, Path(args.output))
     
     print("\n✓ Build complete!")
 
