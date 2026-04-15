@@ -50,6 +50,16 @@ async function loadMainScenario(chapterNum, episodeNum) {
 }
 
 /**
+ * メインストーリーバンドルを読み込み
+ * @param {number} chapterNum - 章番号
+ * @returns {Promise<Array|null>} シナリオデータの配列または null
+ */
+async function loadMainBundle(chapterNum) {
+    const path = API_PATHS.bundles.main(chapterNum);
+    return await loadScenarioData(path);
+}
+
+/**
  * 章番号から部数を取得
  * @param {number} chapterNum - 章番号
  * @returns {number} 部数
@@ -265,15 +275,29 @@ async function loadAndRenderMainChapter(chapterNum, onLoadComplete) {
         startEpisode = 18;
     }
 
-    for (let ep = startEpisode; ep <= maxEpisodes; ep++) {
-        if (currentMainLoadId !== loadId) return;
-
-        const scenario = await loadMainScenario(chapterNum, ep);
-        if (scenario) {
+    // Try bundle first
+    let loadedScenarios = await loadMainBundle(chapterNum);
+    
+    if (loadedScenarios) {
+        loadedScenarios.forEach((scenario, index) => {
+            const ep = startEpisode + index;
             scenarios.push({ episode: ep, scenario });
             html += `<section class="main-episode" data-episode="${ep}">`;
-            html += renderMainStory(scenario, chapterNum, ep - startEpisode, maxEpisodes - startEpisode + 1);
+            html += renderMainStory(scenario, chapterNum, index, loadedScenarios.length);
             html += '</section>';
+        });
+    } else {
+        console.warn(`[Main] Bundle not found for chapter ${chapterNum}, falling back to individual files.`);
+        for (let ep = startEpisode; ep <= maxEpisodes; ep++) {
+            if (currentMainLoadId !== loadId) return;
+
+            const scenario = await loadMainScenario(chapterNum, ep);
+            if (scenario) {
+                scenarios.push({ episode: ep, scenario });
+                html += `<section class="main-episode" data-episode="${ep}">`;
+                html += renderMainStory(scenario, chapterNum, ep - startEpisode, maxEpisodes - startEpisode + 1);
+                html += '</section>';
+            }
         }
     }
 

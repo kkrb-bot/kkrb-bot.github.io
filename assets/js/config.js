@@ -305,7 +305,17 @@ const API_PATHS = {
     epCharaScenario: (characterId, episodeNum) => `public/scenario/ep/chara/iku_epi_${characterId}${String(episodeNum).padStart(2, '0')}.json`,
     epCardScenario: (epid) => `public/scenario/ep/card/iku_epi_${epid}.json`,
     epSpecialScenario: (dir, id) => `public/scenario/ep/special/${dir}/iku_epi_1000${String(id).padStart(2, '0')}.json`,
-    campaignInfo: 'public/info_campaign.json'
+    campaignInfo: 'public/info_campaign.json',
+    bundles: {
+        main: (chapter) => `public/data/bundles/main/chapter_${chapter}.json`,
+        campaign: (index) => `public/data/bundles/campaign/campaign_${index}.json`,
+        event: (eventId) => `public/data/bundles/event/event_${eventId}.json`,
+        love: (characterId) => `public/data/bundles/love/character_${characterId}.json`,
+        epSpot: (spotId) => `public/data/bundles/ep/spot/spot_${spotId}.json`,
+        epChara: (characterId) => `public/data/bundles/ep/chara/character_${characterId}.json`,
+        epSpecial: (dir) => `public/data/bundles/ep/special/special_${dir}.json`,
+        card: (cardId) => `public/data/bundles/card/card_${cardId}.json`
+    }
 };
 
 const THEME_CONFIG = {

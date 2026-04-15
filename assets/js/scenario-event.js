@@ -102,6 +102,16 @@ async function loadEventScenario(eventId, episodeNum) {
 }
 
 /**
+ * イベントバンドルを読み込み
+ * @param {number} eventId - イベントID
+ * @returns {Promise<Object|null>} バンドルデータまたは null
+ */
+async function loadEventBundle(eventId) {
+    const path = API_PATHS.bundles.event(eventId);
+    return await loadScenarioData(path);
+}
+
+/**
  * イベントのエピソード一覧を取得
  * @param {number} eventId - イベントID
  * @returns {Promise<Array<number>|null>} エピソード番号の配列（見つからない場合は null）
@@ -255,36 +265,60 @@ async function loadAndRenderEventSeries(eventId, onLoadComplete) {
     let html = `<div class="event-series" data-event="${eventId}">`;
     const scenarios = [];
 
-    const episodeList = await getEventEpisodeList(eventId);
-    const episodesToLoad = episodeList || [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    // Try bundle first
+    const bundle = await loadEventBundle(eventId);
 
-    for (const ep of episodesToLoad) {
-        if (currentEventLoadId !== loadId) return;
-
-        const scenario = await loadEventScenario(eventId, ep);
-        if (scenario) {
+    if (bundle) {
+        // Render main episodes from bundle
+        for (const epData of bundle.episodes) {
+            const { episode: ep, scenario } = epData;
             scenarios.push({ episode: ep, scenario });
             const htmlPart = await renderEventStory(scenario, eventId, scenarios.length - 1);
             html += `<section class="event-episode" data-episode="${ep}">`;
             html += htmlPart;
             html += '</section>';
         }
-    }
 
-    if (currentEventLoadId !== loadId) return;
-
-    // ログインストーリーを追加
-    const loginStoryIds = await getLoginStoryIds(eventId);
-    for (const loginStoryId of loginStoryIds) {
-        if (currentEventLoadId !== loadId) return;
-
-        const loginScenario = await loadScenarioData(`public/scenario/login/event/scenario_login_${loginStoryId}.json`);
-        if (loginScenario) {
+        // Render login stories from bundle
+        for (const loginData of bundle.login) {
+            const { loginId, scenario: loginScenario } = loginData;
             const sectionIndex = scenarios.length;
             scenarios.push({ type: 'login', sectionIndex, scenario: loginScenario });
             html += `<section class="event-episode" data-section-index="${sectionIndex}">`;
             html += renderLoginStory(loginScenario);
             html += '</section>';
+        }
+    } else {
+        console.warn(`[Event] Bundle not found for event ${eventId}, falling back to individual files.`);
+        const episodeList = await getEventEpisodeList(eventId);
+        const episodesToLoad = episodeList || [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+        for (const ep of episodesToLoad) {
+            if (currentEventLoadId !== loadId) return;
+
+            const scenario = await loadEventScenario(eventId, ep);
+            if (scenario) {
+                scenarios.push({ episode: ep, scenario });
+                const htmlPart = await renderEventStory(scenario, eventId, scenarios.length - 1);
+                html += `<section class="event-episode" data-episode="${ep}">`;
+                html += htmlPart;
+                html += '</section>';
+            }
+        }
+
+        // ログインストーリーを追加 (fallback)
+        const loginStoryIds = await getLoginStoryIds(eventId);
+        for (const loginStoryId of loginStoryIds) {
+            if (currentEventLoadId !== loadId) return;
+
+            const loginScenario = await loadScenarioData(`public/scenario/login/event/scenario_login_${loginStoryId}.json`);
+            if (loginScenario) {
+                const sectionIndex = scenarios.length;
+                scenarios.push({ type: 'login', sectionIndex, scenario: loginScenario });
+                html += `<section class="event-episode" data-section-index="${sectionIndex}">`;
+                html += renderLoginStory(loginScenario);
+                html += '</section>';
+            }
         }
     }
 

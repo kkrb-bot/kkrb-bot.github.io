@@ -29,6 +29,36 @@ async function loadEpCharaScenario(charaId, episodeNum) {
 }
 
 /**
+ * スポットバンドルを読み込み
+ * @param {number} spotId - スポットID
+ * @returns {Promise<Array|null>} シナリオデータの配列または null
+ */
+async function loadEpSpotBundle(spotId) {
+    const path = API_PATHS.bundles.epSpot(spotId);
+    return await loadScenarioData(path);
+}
+
+/**
+ * キャラクターバンドルを読み込み
+ * @param {number} charaId - キャラクターID
+ * @returns {Promise<Array|null>} シナリオデータの配列または null
+ */
+async function loadEpCharaBundle(charaId) {
+    const path = API_PATHS.bundles.epChara(charaId);
+    return await loadScenarioData(path);
+}
+
+/**
+ * スペシャルバンドルを読み込み
+ * @param {string} dir - ディレクトリ名 ('1st' or '2nd')
+ * @returns {Promise<Array|null>} シナリオデータの配列または null
+ */
+async function loadEpSpecialBundle(dir) {
+    const path = API_PATHS.bundles.epSpecial(dir);
+    return await loadScenarioData(path);
+}
+
+/**
  * 単一のストーリーをレンダリング
  * @param {Object} scenario - シナリオデータ
  * @param {number} episodeIndex - エピソードインデックス
@@ -83,20 +113,34 @@ async function loadAndRenderEpSpotSeries(spotId, onLoadComplete) {
     let html = `<div class="ep-spot-series" data-spot-id="${spotId}">`;
     const scenarios = [];
 
-    // Determine max sequence for this spot
-    const maxSeq = EP_SPOT_CONFIG.episodesPerSpotId && EP_SPOT_CONFIG.episodesPerSpotId[spotId] 
-        ? EP_SPOT_CONFIG.episodesPerSpotId[spotId] - 1 
-        : EP_SPOT_CONFIG.maxSeq;
+    // Try bundle first
+    let loadedScenarios = await loadEpSpotBundle(spotId);
 
-    for (let seq = EP_SPOT_CONFIG.minSeq; seq <= maxSeq; seq++) {
-        if (currentEpLoadId !== loadId) return;
-
-        const scenario = await loadEpSpotScenario(spotId, seq);
-        if (scenario) {
+    if (loadedScenarios) {
+        loadedScenarios.forEach((scenario, index) => {
+            const seq = EP_SPOT_CONFIG.minSeq + index;
             scenarios.push({ seq, scenario });
             html += `<section class="ep-spot-episode" data-seq="${seq}">`;
-            html += renderEpStory(scenario, seq - EP_SPOT_CONFIG.minSeq, seq);
+            html += renderEpStory(scenario, index, seq);
             html += '</section>';
+        });
+    } else {
+        console.warn(`[EpSpot] Bundle not found for spot ${spotId}, falling back to individual files.`);
+        // Determine max sequence for this spot
+        const maxSeq = EP_SPOT_CONFIG.episodesPerSpotId && EP_SPOT_CONFIG.episodesPerSpotId[spotId] 
+            ? EP_SPOT_CONFIG.episodesPerSpotId[spotId] - 1 
+            : EP_SPOT_CONFIG.maxSeq;
+
+        for (let seq = EP_SPOT_CONFIG.minSeq; seq <= maxSeq; seq++) {
+            if (currentEpLoadId !== loadId) return;
+
+            const scenario = await loadEpSpotScenario(spotId, seq);
+            if (scenario) {
+                scenarios.push({ seq, scenario });
+                html += `<section class="ep-spot-episode" data-seq="${seq}">`;
+                html += renderEpStory(scenario, seq - EP_SPOT_CONFIG.minSeq, seq);
+                html += '</section>';
+            }
         }
     }
 
@@ -152,17 +196,31 @@ async function loadAndRenderEpCharaSeries(charaId, onLoadComplete) {
     html += `<h2 class="no-toc-title">${katakanaName}のキャラエピ</h2>`;
     const scenarios = [];
 
-    // キャラ部分の命名規則: [1-21]+[13~32] with 18 files per chara
-    // Load from episode 13 to 32, but only 18 will exist
-    for (let ep = 13; ep <= 32; ep++) {
-        if (currentEpLoadId !== loadId) return;
+    // Try bundle first
+    let loadedScenarios = await loadEpCharaBundle(charaId);
 
-        const scenario = await loadEpCharaScenario(charaId, ep);
-        if (scenario) {
+    if (loadedScenarios) {
+        loadedScenarios.forEach((scenario, index) => {
+            const ep = 13 + index; // Chara ep starts from 13
             scenarios.push({ episode: ep, scenario });
             html += `<section class="ep-chara-episode" data-episode="${ep}">`;
-            html += renderEpStory(scenario, scenarios.length - 1, undefined, true);
+            html += renderEpStory(scenario, index, undefined, true);
             html += '</section>';
+        });
+    } else {
+        console.warn(`[EpChara] Bundle not found for character ${charaId}, falling back to individual files.`);
+        // キャラ部分の命名規則: [1-21]+[13~32] with 18 files per chara
+        // Load from episode 13 to 32, but only 18 will exist
+        for (let ep = 13; ep <= 32; ep++) {
+            if (currentEpLoadId !== loadId) return;
+
+            const scenario = await loadEpCharaScenario(charaId, ep);
+            if (scenario) {
+                scenarios.push({ episode: ep, scenario });
+                html += `<section class="ep-chara-episode" data-episode="${ep}">`;
+                html += renderEpStory(scenario, scenarios.length - 1, undefined, true);
+                html += '</section>';
+            }
         }
     }
 
@@ -246,30 +304,55 @@ async function loadAndRenderEpSpecialSeries(dir, onLoadComplete) {
     html += `<h2 class="no-toc-title">${dirConfig.displayName}</h2>`;
     const scenarios = [];
 
-    for (let id = dirConfig.minId; id <= dirConfig.maxId; id++) {
-        if (currentEpLoadId !== loadId) return;
+    // Try bundle first
+    let loadedScenarios = await loadEpSpecialBundle(dir);
 
-        const scenario = await loadEpSpecialScenario(dir, id);
-        if (scenario) {
+    if (loadedScenarios) {
+        loadedScenarios.forEach((scenario, index) => {
+            const id = dirConfig.minId + index;
             scenarios.push({ id, scenario });
             html += `<section class="ep-special-episode" data-id="${id}">`;
             
-            // h3用フールタイトル： Title - |処理：両側に内容があれば全角スペースに、左側だけあれば左側のみ
             let h3Text = scenario.Title;
             if (h3Text.includes('|')) {
                 const parts = h3Text.split('|');
                 if (parts[0].trim() && parts[1].trim()) {
-                    // 両側に内容がある場合：全角スペースに置き換え
                     h3Text = h3Text.replace('|', '　');
                 } else if (parts[0].trim()) {
-                    // 左側だけに内容がある場合：左側のみ保持
                     h3Text = parts[0].trim();
                 }
             }
             html += `<h3>${h3Text}</h3>`;
-            
             html += renderDialogue(scenario.Dialogue);
             html += '</section>';
+        });
+    } else {
+        console.warn(`[EpSpecial] Bundle not found for dir ${dir}, falling back to individual files.`);
+        for (let id = dirConfig.minId; id <= dirConfig.maxId; id++) {
+            if (currentEpLoadId !== loadId) return;
+
+            const scenario = await loadEpSpecialScenario(dir, id);
+            if (scenario) {
+                scenarios.push({ id, scenario });
+                html += `<section class="ep-special-episode" data-id="${id}">`;
+                
+                // h3用フールタイトル： Title - |処理：両側に内容があれば全角スペースに、左側だけあれば左側のみ
+                let h3Text = scenario.Title;
+                if (h3Text.includes('|')) {
+                    const parts = h3Text.split('|');
+                    if (parts[0].trim() && parts[1].trim()) {
+                        // 両側に内容がある場合：全角スペースに置き換え
+                        h3Text = h3Text.replace('|', '　');
+                    } else if (parts[0].trim()) {
+                        // 左側だけに内容がある場合：左側のみ保持
+                        h3Text = parts[0].trim();
+                    }
+                }
+                html += `<h3>${h3Text}</h3>`;
+                
+                html += renderDialogue(scenario.Dialogue);
+                html += '</section>';
+            }
         }
     }
 

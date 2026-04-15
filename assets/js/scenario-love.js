@@ -17,6 +17,16 @@ async function loadLoveScenario(characterId, episodeNum) {
 }
 
 /**
+ * 親愛ストーリーバンドルを読み込み
+ * @param {number} characterId - キャラクターID
+ * @returns {Promise<Array|null>} シナリオデータの配列または null
+ */
+async function loadLoveBundle(characterId) {
+    const path = API_PATHS.bundles.love(characterId);
+    return await loadScenarioData(path);
+}
+
+/**
  * 単一のストーリーをレンダリング
  * @param {Object} scenario - シナリオデータ
  * @param {number} episodeIndex - エピソードインデックス
@@ -78,15 +88,29 @@ async function loadAndRenderLoveSeries(characterId, onLoadComplete) {
     let html = `<div class="love-series" data-character="${characterName}">`;
     const scenarios = [];
 
-    for (let ep = 1; ep <= LOVE_EPISODES_PER_CHARACTER; ep++) {
-        if (currentLoveLoadId !== loadId) return;
+    // Try bundle first
+    let loadedScenarios = await loadLoveBundle(characterId);
 
-        const scenario = await loadLoveScenario(characterId, ep);
-        if (scenario) {
+    if (loadedScenarios) {
+        loadedScenarios.forEach((scenario, index) => {
+            const ep = index + 1;
             scenarios.push({ episode: ep, scenario });
             html += `<section class="love-episode" data-episode="${ep}">`;
-            html += renderLoveStory(scenario, ep - 1);
+            html += renderLoveStory(scenario, index);
             html += '</section>';
+        });
+    } else {
+        console.warn(`[Love] Bundle not found for character ${characterId}, falling back to individual files.`);
+        for (let ep = 1; ep <= LOVE_EPISODES_PER_CHARACTER; ep++) {
+            if (currentLoveLoadId !== loadId) return;
+
+            const scenario = await loadLoveScenario(characterId, ep);
+            if (scenario) {
+                scenarios.push({ episode: ep, scenario });
+                html += `<section class="love-episode" data-episode="${ep}">`;
+                html += renderLoveStory(scenario, ep - 1);
+                html += '</section>';
+            }
         }
     }
 

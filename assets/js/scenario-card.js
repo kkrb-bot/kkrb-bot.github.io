@@ -31,6 +31,17 @@ async function loadCardScenario(displayId) {
 }
 
 /**
+ * カードバンドルを読み込み
+ * @param {number} displayId - 表示ID
+ * @returns {Promise<Array|null>} シナリオデータの配列または null
+ */
+async function loadCardBundle(displayId) {
+    const actualId = getActualCardId(displayId);
+    const path = API_PATHS.bundles.card(actualId);
+    return await loadScenarioData(path);
+}
+
+/**
  * カードストーリーを初期化してレンダリング
  * @param {number} displayId - 表示ID (URLで使用)
  */
@@ -38,7 +49,13 @@ async function initCardScenario(displayId, onLoadComplete) {
     const loadId = Math.random();
     currentCardLoadId = loadId;
 
-    const scenarios = await loadCardScenario(displayId);
+    // Try bundle first
+    let scenarios = await loadCardBundle(displayId);
+    
+    if (!scenarios) {
+        console.warn(`[Card] Bundle not found for card ${displayId}, falling back to individual files.`);
+        scenarios = await loadCardScenario(displayId);
+    }
 
     if (loadId !== currentCardLoadId) {
         return;
