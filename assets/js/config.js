@@ -24,29 +24,31 @@ async function loadAppConfig() {
             throw new Error(`Failed to load info.json: ${response.status}`);
         }
         const info = await response.json();
-        
+        const currentDate = new Date().toISOString().split('T')[0];
+
         APP_CONFIG = {
             // info.json からバージョン情報を読み込み
-            DATA_VERSION: info.version || '2026-02-05',
-            
+            DATA_VERSION: info.version || currentDate,
+
             // キャッシュの有効期限（ミリ秒、デフォルト30日）
             CACHE_MAX_AGE: 30 * 24 * 60 * 60 * 1000,
-            
+
             // 検索データチャンクのベースURL（Web Workerから見た相対パス）
             CHUNKS_BASE_URL: '../../public/data/chunks'
         };
-        
         return APP_CONFIG;
-    } catch (error) {
+        } catch (error) {
         console.error('Error loading app config:', error);
+        const currentDate = new Date().toISOString().split('T')[0];
         // フォールバックとしてデフォルト値を使用
         APP_CONFIG = {
-            DATA_VERSION: '2026-02-05',
+            DATA_VERSION: currentDate,
             CACHE_MAX_AGE: 30 * 24 * 60 * 60 * 1000,
             CHUNKS_BASE_URL: '../../public/data/chunks'
         };
         return APP_CONFIG;
-    }
+        }
+
 }
 
 const CHARACTER_MAP = {

@@ -12,7 +12,7 @@ let dataLoadingPromise = null;
 let searchWorker = null;
 
 // 設定変数（initSearchで初期化）
-let DATA_VERSION = '2026-02-05'; // デフォルト値
+let DATA_VERSION = ''; // 動的に取得（manifest.json優先）
 let CHUNKS_BASE_URL = 'public/data/chunks'; // デフォルト値
 let totalDataSizeText = ''; // 取得したデータサイズを保持
 let manifestLoadError = false; // マニフェスト読み込み失敗フラグ
