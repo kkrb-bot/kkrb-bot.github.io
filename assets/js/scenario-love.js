@@ -6,17 +6,6 @@
 let currentLoveLoadId = null;
 
 /**
- * シナリオJSONを読み込み
- * @param {number} characterId - キャラクターID
- * @param {number} episodeNum - エピソード番号
- * @returns {Promise<Object|null>} シナリオデータまたは null
- */
-async function loadLoveScenario(characterId, episodeNum) {
-    const path = API_PATHS.loveScenario(characterId, episodeNum);
-    return await loadScenarioData(path);
-}
-
-/**
  * 親愛ストーリーバンドルを読み込み
  * @param {number} characterId - キャラクターID
  * @returns {Promise<Array|null>} シナリオデータの配列または null
@@ -88,31 +77,22 @@ async function loadAndRenderLoveSeries(characterId, onLoadComplete) {
     let html = `<div class="love-series" data-character="${characterName}">`;
     const scenarios = [];
 
-    // Try bundle first
+    // Load bundle
     let loadedScenarios = await loadLoveBundle(characterId);
 
-    if (loadedScenarios) {
-        loadedScenarios.forEach((scenario, index) => {
-            const ep = index + 1;
-            scenarios.push({ episode: ep, scenario });
-            html += `<section class="love-episode" data-episode="${ep}">`;
-            html += renderLoveStory(scenario, index);
-            html += '</section>';
-        });
-    } else {
-        console.warn(`[Love] Bundle not found for character ${characterId}, falling back to individual files.`);
-        for (let ep = 1; ep <= LOVE_EPISODES_PER_CHARACTER; ep++) {
-            if (currentLoveLoadId !== loadId) return;
-
-            const scenario = await loadLoveScenario(characterId, ep);
-            if (scenario) {
-                scenarios.push({ episode: ep, scenario });
-                html += `<section class="love-episode" data-episode="${ep}">`;
-                html += renderLoveStory(scenario, ep - 1);
-                html += '</section>';
-            }
-        }
+    if (!loadedScenarios) {
+        console.error(`[Love] Bundle not found for character ${characterId}`);
+        container.innerHTML = '<div class="error">データが見つかりませんでした。</div>';
+        return;
     }
+
+    loadedScenarios.forEach((scenario, index) => {
+        const ep = index + 1;
+        scenarios.push({ episode: ep, scenario });
+        html += `<section class="love-episode" data-episode="${ep}">`;
+        html += renderLoveStory(scenario, index);
+        html += '</section>';
+    });
 
     if (currentLoveLoadId !== loadId) return;
 

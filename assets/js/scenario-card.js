@@ -6,31 +6,6 @@
 let currentCardLoadId = null;
 
 /**
- * カードシナリオJSONを読み込み（すべてのバリアント）
- * @param {number} displayId - 表示ID (URLで使用)
- * @returns {Promise<Array<Object>|null>} シナリオデータの配列またはnull
- */
-async function loadCardScenario(displayId) {
-    const actualId = getActualCardId(displayId);
-    const scenarios = [];
-    const maxVariant = Number(actualId) === 337 ? 5 : 3;
-
-    for (let variantNum = 1; variantNum <= maxVariant; variantNum++) {
-        const path = `public/scenario/card/scenario_card_${actualId}-${variantNum}.json`;
-        const scenario = await loadScenarioData(path);
-        if (scenario) {
-            scenarios.push({ variantNum, data: scenario });
-        } else if (variantNum === 1) {
-            return null;
-        } else {
-            break;
-        }
-    }
-
-    return scenarios.length > 0 ? scenarios : null;
-}
-
-/**
  * カードバンドルを読み込み
  * @param {number} displayId - 表示ID
  * @returns {Promise<Array|null>} シナリオデータの配列または null
@@ -49,12 +24,16 @@ async function initCardScenario(displayId, onLoadComplete) {
     const loadId = Math.random();
     currentCardLoadId = loadId;
 
-    // Try bundle first
+    // Load bundle
     let scenarios = await loadCardBundle(displayId);
     
     if (!scenarios) {
-        console.warn(`[Card] Bundle not found for card ${displayId}, falling back to individual files.`);
-        scenarios = await loadCardScenario(displayId);
+        console.error(`[Card] Bundle not found for card ${displayId}`);
+        if (loadId === currentCardLoadId) {
+            const cardContent = document.querySelector('#card-content');
+            if (cardContent) cardContent.innerHTML = `<p>データが見つかりませんでした。</p>`;
+        }
+        return;
     }
 
     if (loadId !== currentCardLoadId) {

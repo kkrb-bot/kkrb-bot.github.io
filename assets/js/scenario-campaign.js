@@ -38,16 +38,6 @@ async function loadCampaignData() {
 }
 
 /**
- * シナリオJSONを読み込み
- * @param {number} loginId - ログインストーリーID
- * @returns {Promise<Object|null>} シナリオデータまたは null
- */
-async function loadCampaignScenario(loginId) {
-    const path = `public/scenario/login/campaign/scenario_login_${loginId}.json`;
-    return await loadScenarioData(path);
-}
-
-/**
  * キャンペーンバンドルを読み込み
  * @param {number} campaignIndex - キャンペーンインデックス
  * @returns {Promise<Array|null>} シナリオデータの配列または null
@@ -181,21 +171,14 @@ async function loadAndRenderCampaignSeries(campaignIndex, onLoadComplete) {
     let html = `<div class="campaign-series" data-campaign-index="${campaignIndex}">`;
     const scenarios = [];
 
-    // Try to load bundle first for better performance
+    // Load bundle
     let loadedScenarios = await loadCampaignBundle(campaignIndex);
     const scriptIds = campaign.script || campaign.scripts || [];
     
     if (!loadedScenarios) {
-        console.warn(`[Campaign] Bundle not found for campaign ${campaignIndex}, falling back to individual files.`);
-        loadedScenarios = [];
-        for (const scriptId of scriptIds) {
-            if (currentCampaignLoadId !== loadId) return;
-
-            const scenario = await loadCampaignScenario(scriptId);
-            if (scenario) {
-                loadedScenarios.push(scenario);
-            }
-        }
+        console.error(`[Campaign] Bundle not found for campaign ${campaignIndex}`);
+        container.innerHTML = '<div class="error">データが見つかりませんでした。</div>';
+        return;
     }
 
     // タイトルを分析してh2とh3のテキストを決定

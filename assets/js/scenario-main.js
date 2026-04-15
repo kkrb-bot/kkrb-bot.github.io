@@ -39,17 +39,6 @@ function getDisplayChapterInfo(actualChapterNum) {
 }
 
 /**
- * シナリオJSONを読み込み
- * @param {number} chapterNum - 章番号
- * @param {number} episodeNum - エピソード番号
- * @returns {Promise<Object|null>} シナリオデータまたは null
- */
-async function loadMainScenario(chapterNum, episodeNum) {
-    const path = API_PATHS.mainScenario(chapterNum, episodeNum);
-    return await loadScenarioData(path);
-}
-
-/**
  * メインストーリーバンドルを読み込み
  * @param {number} chapterNum - 章番号
  * @returns {Promise<Array|null>} シナリオデータの配列または null
@@ -275,31 +264,22 @@ async function loadAndRenderMainChapter(chapterNum, onLoadComplete) {
         startEpisode = 18;
     }
 
-    // Try bundle first
+    // Load bundle
     let loadedScenarios = await loadMainBundle(chapterNum);
     
-    if (loadedScenarios) {
-        loadedScenarios.forEach((scenario, index) => {
-            const ep = startEpisode + index;
-            scenarios.push({ episode: ep, scenario });
-            html += `<section class="main-episode" data-episode="${ep}">`;
-            html += renderMainStory(scenario, chapterNum, index, loadedScenarios.length);
-            html += '</section>';
-        });
-    } else {
-        console.warn(`[Main] Bundle not found for chapter ${chapterNum}, falling back to individual files.`);
-        for (let ep = startEpisode; ep <= maxEpisodes; ep++) {
-            if (currentMainLoadId !== loadId) return;
-
-            const scenario = await loadMainScenario(chapterNum, ep);
-            if (scenario) {
-                scenarios.push({ episode: ep, scenario });
-                html += `<section class="main-episode" data-episode="${ep}">`;
-                html += renderMainStory(scenario, chapterNum, ep - startEpisode, maxEpisodes - startEpisode + 1);
-                html += '</section>';
-            }
-        }
+    if (!loadedScenarios) {
+        console.error(`[Main] Bundle not found for chapter ${chapterNum}`);
+        container.innerHTML = '<div class="error">データが見つかりませんでした。</div>';
+        return;
     }
+
+    loadedScenarios.forEach((scenario, index) => {
+        const ep = startEpisode + index;
+        scenarios.push({ episode: ep, scenario });
+        html += `<section class="main-episode" data-episode="${ep}">`;
+        html += renderMainStory(scenario, chapterNum, index, loadedScenarios.length);
+        html += '</section>';
+    });
 
     if (currentMainLoadId !== loadId) return;
 
