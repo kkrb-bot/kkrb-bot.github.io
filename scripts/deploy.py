@@ -114,6 +114,28 @@ def generate_manifests() -> bool:
         print(f"✗ Failed to generate manifests: {e}")
         return False
 
+def generate_bundles() -> bool:
+    """Generate data bundles for faster loading"""
+    print(f"\n📦 Generating data bundles...")
+    
+    try:
+        # Call the build_bundles.py script
+        result = subprocess.run(
+            ['python3', 'scripts/build_bundles.py'],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        print(result.stdout)
+        print("✓ Bundles generated successfully")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"✗ Failed to generate bundles: {e.stderr}")
+        return False
+    except Exception as e:
+        print(f"✗ Failed to generate bundles: {e}")
+        return False
+
 def main():
     """Main deployment function"""
     print("🚀 Starting GitHub Pages deployment...\n")
@@ -181,6 +203,11 @@ def main():
         # Step 3: Generate manifests
         if not generate_manifests():
             print("❌ Failed to generate manifests")
+            return 1
+
+        # Step 4: Generate data bundles
+        if not generate_bundles():
+            print("❌ Failed to generate bundles")
             return 1
         
         # Cleanup temporary directory
