@@ -1125,15 +1125,15 @@ function generateDisplayTitle(type, scenarioId, title = '') {
     if (type === 'main') {
         return generateMainStoryTitle(scenarioId);
     } else if (type === 'event' || type === 'caulis') {
-        return generateEventStoryTitle(scenarioId);
+        return generateEventStoryTitle(scenarioId, title);
     } else if (type === 'love') {
         return generateLoveStoryTitle(scenarioId);
     } else if (type.startsWith('ep-')) {
         return generateEpStoryTitle(type, scenarioId, title);
     } else if (type === 'campaign') {
-        return generateCampaignStoryTitle(scenarioId);
+        return generateCampaignStoryTitle(scenarioId, title);
     } else if (type === 'login-event') {
-        return generateLoginEventStoryTitle(scenarioId);
+        return generateLoginEventStoryTitle(scenarioId, title);
     }
     return scenarioId;
 }
