@@ -309,11 +309,27 @@ def main():
     parser.add_argument('--output', type=str, default='public/data/chunks', help='Output directory for chunks')
     args = parser.parse_args()
 
-    # Get version from config or use current date
-    version = datetime.now().strftime('%Y-%m-%d')
+    # Try to get version from info.json in the source directory
+    source_path = Path(args.source)
+    info_path = source_path / 'info.json'
+    version = None
     
-    # Override base_path inside load_all_dialogues if necessary, 
-    # but more cleanly, let's pass it
+    if info_path.exists():
+        try:
+            with open(info_path, 'r', encoding='utf-8') as f:
+                info_data = json.load(f)
+                version = info_data.get('version')
+                if version:
+                    print(f"Using version from info.json: {version}")
+        except Exception as e:
+            print(f"Warning: Failed to read version from info.json: {e}")
+
+    # Fallback to current date if no version found
+    if not version:
+        version = datetime.now().strftime('%Y-%m-%d')
+        print(f"No version found in info.json, falling back to date: {version}")
+    
+    # ... rest of the logic ...
     print(f"Loading all scenario dialogues from {args.source}...")
     dialogues, event_names = load_all_dialogues(Path(args.source))
     print(f"Loaded {len(dialogues)} dialogues from {len(event_names)} events")
