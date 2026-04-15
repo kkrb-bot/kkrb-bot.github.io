@@ -404,7 +404,10 @@ async function initSearchUI() {
     const searchPageContent = document.querySelector('[data-page="search"]');
     if (!searchPageContent) return;
 
-    // Preload mappings for better performance
+    // 1. Ensure configuration is loaded first to get correct DATA_VERSION
+    await loadAppConfig();
+
+    // 2. Preload mappings for better performance
     await Promise.all([
         loadCampaignMapping(),
         loadCardEpMapping(),
@@ -429,7 +432,7 @@ async function initSearchUI() {
         return;
     }
     
-    // キャッシュの状態を確認
+    // 3. キャッシュの状態を確認
     const hasCachedData = await checkCachedData();
     
     if (manifestLoadError && !hasCachedData) {
@@ -847,6 +850,9 @@ async function handleClearCache() {
         // データをクリア
         allDialogues = [];
         eventNames = {};
+        
+        // sessionStorageもクリア
+        sessionStorage.clear();
         
         // 警告ページに戻る
         initSearchUI();
