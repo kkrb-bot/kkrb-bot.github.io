@@ -432,8 +432,22 @@ async function initSearchUI() {
         return;
     }
     
-    // 3. キャッシュの状態を確認
-    const hasCachedData = await checkCachedData();
+    // 3. サーバー上の最新バージョンを確認
+    let latestVersion = null;
+    try {
+        const manifestUrl = `${CHUNKS_BASE_URL}/manifest.json`;
+        const response = await fetch(manifestUrl);
+        if (response.ok) {
+            const manifest = await response.json();
+            latestVersion = manifest.version;
+            DATA_VERSION = latestVersion; // Update global for subsequent logic
+        }
+    } catch (e) {
+        console.warn('Failed to fetch manifest version, using current config');
+    }
+
+    // 4. キャッシュの状態を確認
+    const hasCachedData = await checkCachedData(latestVersion);
     
     if (manifestLoadError && !hasCachedData) {
         searchContainer.innerHTML = `
@@ -505,7 +519,7 @@ async function initSearchUI() {
 /**
  * キャッシュデータの存在を確認
  */
-async function checkCachedData() {
+async function checkCachedData(latestVersion) {
     return new Promise((resolve) => {
         try {
             const request = indexedDB.open('searchDataCache', 1);
@@ -539,7 +553,9 @@ async function checkCachedData() {
                         return;
                     }
                     
-                    if (metadata.version === DATA_VERSION) {
+                    // Use the latest version from manifest if provided, else fall back to current DATA_VERSION
+                    const versionToCompare = latestVersion || DATA_VERSION;
+                    if (metadata.version === versionToCompare) {
                         resolve(true);
                     } else {
                         resolve(false);
