@@ -62,28 +62,6 @@ async function loadCampaignMapping() {
             }
         });
         
-        // Load titles for all campaign scenarios
-        const titlePromises = [];
-        for (const campaign of campaigns) {
-            if (campaign.script && Array.isArray(campaign.script)) {
-                for (const loginId of campaign.script) {
-                    const promise = fetch(`public/scenario/login/campaign/scenario_login_${loginId}.json`)
-                        .then(response => response.ok ? response.json() : null)
-                        .then(data => {
-                            if (data && data.Title) {
-                                campaignLoginIdToTitle[loginId.toString()] = data.Title;
-                            }
-                        })
-                        .catch(error => {
-                            console.error(`Failed to load title for loginId ${loginId}:`, error);
-                        });
-                    titlePromises.push(promise);
-                }
-            }
-        }
-        
-        await Promise.all(titlePromises);
-        
         return { indexMap: campaignLoginIdToIndex, titleMap: campaignLoginIdToTitle };
     } catch (error) {
         console.error('Error loading campaign mapping:', error);
@@ -121,28 +99,6 @@ async function loadEventMapping() {
                 });
             }
         }
-        
-        // Load titles for all event scenarios
-        const titlePromises = [];
-        for (const [eventIdStr, eventData] of Object.entries(eventMapping)) {
-            if (eventData.lgstList && Array.isArray(eventData.lgstList)) {
-                for (const loginId of eventData.lgstList) {
-                    const promise = fetch(`public/scenario/login/event/scenario_login_${loginId}.json`)
-                        .then(response => response.ok ? response.json() : null)
-                        .then(data => {
-                            if (data && data.Title) {
-                                eventLoginIdToTitle[loginId.toString()] = data.Title;
-                            }
-                        })
-                        .catch(error => {
-                            console.error(`Failed to load title for loginId ${loginId}:`, error);
-                        });
-                    titlePromises.push(promise);
-                }
-            }
-        }
-        
-        await Promise.all(titlePromises);
         
         return { eventIdMap: eventLoginIdToEventId, titleMap: eventLoginIdToTitle };
     } catch (error) {
@@ -1107,23 +1063,24 @@ function displaySearchResults(dialogues, speakers, contentPattern, scenarioType)
         }[group.type] || group.type;
 
         const scenarioLink = generateScenarioLink(group.type, group.id);
+        const firstDialogue = group.dialogues[0];
+        const chunkTitle = firstDialogue.title || '';
 
         let displayTitle;
         if (group.type === 'main') {
-            displayTitle = `メインストーリー｜${generateDisplayTitle(group.type, group.id)}`;
-        } else if (group.type === 'event') {
-            displayTitle = `イベントストーリー｜${generateDisplayTitle(group.type, group.id)}`;
+            displayTitle = `メインストーリー｜${generateMainStoryTitle(group.id)}`;
+        } else if (group.type === 'event' || group.type === 'caulis') {
+            displayTitle = `イベントストーリー｜${generateEventStoryTitle(group.id, chunkTitle)}`;
         } else if (group.type === 'love') {
-            displayTitle = `親愛ストーリー｜${generateDisplayTitle(group.type, group.id)}`;
+            displayTitle = `親愛ストーリー｜${generateLoveStoryTitle(group.id)}`;
         } else if (group.type === 'card') {
             displayTitle = `カードストーリー｜${generateCardStoryTitle(group.id)}`;
         } else if (group.type.startsWith('ep-')) {
-            const epTitle = group.dialogues[0].title;
-            displayTitle = generateDisplayTitle(group.type, group.id, epTitle);
+            displayTitle = generateDisplayTitle(group.type, group.id, chunkTitle);
         } else if (group.type === 'campaign') {
-            displayTitle = `ログインストーリー｜${generateDisplayTitle(group.type, group.id)}`;
+            displayTitle = `ログインストーリー｜${generateCampaignStoryTitle(group.id, chunkTitle)}`;
         } else if (group.type === 'login-event') {
-            displayTitle = `イベントストーリー｜${generateDisplayTitle(group.type, group.id)}`;
+            displayTitle = `イベントストーリー｜${generateLoginEventStoryTitle(group.id, chunkTitle)}`;
         } else {
             displayTitle = `${typeLabel}｜${group.id}`;
         }
@@ -1149,50 +1106,6 @@ function displaySearchResults(dialogues, speakers, contentPattern, scenarioType)
 
     resultsContainer.innerHTML = html;
     resultsContainer.style.display = 'block';
-
-    // Asynchronously load caulis titles (if any) and update displayed titles
-    (async () => {
-        const resultNodes = resultsContainer.querySelectorAll('.result-scenario[data-type="caulis"]');
-        for (const node of resultNodes) {
-            try {
-                const type = node.getAttribute('data-type');
-                const id = node.getAttribute('data-id');
-                // id format is like "84-6"
-                const [eventIdStr, episodeStr] = id.split('-');
-                const eventId = eventIdStr;
-                const episode = episodeStr;
-                const cacheKey = `caulisTitle_${eventId}_${episode}`;
-
-                // Try session cache first
-                let titleText = sessionStorage.getItem(cacheKey);
-                if (!titleText) {
-                    const url = `public/scenario/caulis/caulis_story_${eventId}-${episode}.json`;
-                    const resp = await fetch(url);
-                    if (resp.ok) {
-                        const data = await resp.json();
-                        if (data && data.Title) {
-                            const parts = data.Title.split('|').map(s => s.trim());
-                            if (parts.length === 2) {
-                                titleText = `${parts[0]}　${parts[1]}`;
-                            } else {
-                                titleText = parts[0] || data.Title;
-                            }
-                            sessionStorage.setItem(cacheKey, titleText);
-                        }
-                    }
-                }
-
-                if (titleText) {
-                    const anchor = node.querySelector('.scenario-link');
-                    if (anchor) {
-                        anchor.textContent = `${typeLabelForDisplay(type)}｜${titleText}`;
-                    }
-                }
-            } catch (e) {
-                // ignore per-entry errors
-            }
-        }
-    })();
 }
 
 function typeLabelForDisplay(type) {
@@ -1272,7 +1185,7 @@ function generateMainStoryTitle(scenarioId) {
 /**
  * イベントストーリーの表示タイトルを生成
  */
-function generateEventStoryTitle(scenarioId) {
+function generateEventStoryTitle(scenarioId, chunkTitle = '') {
     const [eventIdStr, episodeStr] = scenarioId.split('-');
     const eventId = parseInt(eventIdStr);
     const episode = parseInt(episodeStr);
@@ -1282,20 +1195,12 @@ function generateEventStoryTitle(scenarioId) {
         '２１', '２２', '２３', '２４', '２５', '２６', '２７', '２８', '２９', '３０',
         '３１', '３２', '３３', '３４', '３５', '３６', '３７', '３８', '３９', '４０'];
 
-    let eventName = eventNames[eventId];
+    let eventName = '';
     
-    // eventNamesが空の場合、JSON から直接タイトルを取得する
-    if (!eventName) {
-        const filename = `scenario_event_${eventIdStr}-1.json`;
-        const cacheKey = `eventName_${eventId}`;
-        
-        // キャッシュから取得を試みる
-        if (sessionStorage.getItem(cacheKey)) {
-            eventName = sessionStorage.getItem(cacheKey);
-        } else {
-            // キャッシュにない場合はデフォルト値を使用
-            eventName = `イベント${eventId}`;
-        }
+    if (chunkTitle) {
+        eventName = chunkTitle.split('|')[0].trim();
+    } else {
+        eventName = eventNames[eventId] || sessionStorage.getItem(`eventName_${eventId}`) || `イベント${eventId}`;
     }
     
     const japaneseEpisode = japaneseNumerals[episode] || episode;
@@ -1484,7 +1389,10 @@ function generateEpDisplayTitle(type, scenarioId, title) {
 /**
  * ログインストーリーの表示タイトルを生成
  */
-function generateCampaignStoryTitle(scenarioId) {
+function generateCampaignStoryTitle(scenarioId, chunkTitle = '') {
+    if (chunkTitle) {
+        return chunkTitle.replace(/\|/g, '　');
+    }
     if (campaignLoginIdToTitle && campaignLoginIdToTitle[scenarioId]) {
         const title = campaignLoginIdToTitle[scenarioId];
         // Replace | with full-width space
@@ -1496,7 +1404,10 @@ function generateCampaignStoryTitle(scenarioId) {
 /**
  * ログインイベントストーリーの表示タイトルを生成
  */
-function generateLoginEventStoryTitle(scenarioId) {
+function generateLoginEventStoryTitle(scenarioId, chunkTitle = '') {
+    if (chunkTitle) {
+        return chunkTitle.replace(/\|/g, '　');
+    }
     if (eventLoginIdToTitle && eventLoginIdToTitle[scenarioId]) {
         const title = eventLoginIdToTitle[scenarioId];
         // Replace | with full-width space
