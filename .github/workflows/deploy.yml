@@ -48,6 +48,7 @@ jobs:
 
       - name: Add generated files to artifact
         run: |
+          rm .gitignore
           git add -f public/
 
       - name: Upload artifact
