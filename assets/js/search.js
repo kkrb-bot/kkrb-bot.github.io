@@ -143,7 +143,7 @@ async function loadCardEpMapping() {
     }
     
     try {
-        const response = await fetch('public/scenario/card-ep.json');
+        const response = await fetch('public/scenario/ep/card-ep.json');
         if (!response.ok) {
             console.error('Failed to load card-ep.json');
             cardEpIdToCardId = {};
