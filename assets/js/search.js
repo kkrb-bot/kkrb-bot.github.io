@@ -155,9 +155,9 @@ async function loadCardEpMapping() {
         cardIdToDisplayId = {};
         
         // Reverse mapping: epid -> cardId
-        for (const [cardIdStr, epidStr] of Object.entries(mapping)) {
+        for (const [cardIdStr, epidVal] of Object.entries(mapping)) {
             const cardId = parseInt(cardIdStr);
-            const epid = epidStr;
+            const epid = epidVal.toString(); // Ensure epid is a string to match search data
             cardEpIdToCardId[epid] = cardIdStr;
             // Display ID = cardId - 19 if cardId > 336, else cardId
             cardIdToDisplayId[cardIdStr] = (cardId > 336) ? (cardId - 19).toString() : cardIdStr;
@@ -1509,24 +1509,14 @@ function generateScenarioLink(type, scenarioId) {
         }
         case 'ep-card': {
             // scenarioId is epid, need to map to displayId
-            if (cardEpIdToCardId === null || cardIdToDisplayId === null) {
-                loadCardEpMapping().then(({ epidToCardId, cardIdToDisplayId: displayIdMap }) => {
-                    const cardId = epidToCardId[scenarioId];
-                    if (cardId && displayIdMap[cardId]) {
-                        return `#ep/card/${displayIdMap[cardId]}`;
-                    } else {
-                        return '#ep/card';
-                    }
-                });
-                return '#ep/card'; // Return default while loading
-            } else {
+            if (cardEpIdToCardId && cardIdToDisplayId) {
                 const cardId = cardEpIdToCardId[scenarioId];
                 if (cardId && cardIdToDisplayId[cardId]) {
                     return `#ep/card/${cardIdToDisplayId[cardId]}`;
-                } else {
-                    return '#ep/card';
                 }
             }
+            // Fallback: if mapping not found, we can't do much but return a safe link
+            return '#ep/card';
         }
         case 'campaign': {
             // scenarioId is like '10000' for scenario_login_10000.json
