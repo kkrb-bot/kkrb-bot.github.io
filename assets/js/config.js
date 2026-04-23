@@ -316,7 +316,8 @@ const API_PATHS = {
         epSpot: (spotId) => `public/data/bundles/ep/spot/spot_${spotId}.json`,
         epChara: (characterId) => `public/data/bundles/ep/chara/character_${characterId}.json`,
         epSpecial: (dir) => `public/data/bundles/ep/special/special_${dir}.json`,
-        card: (cardId) => `public/data/bundles/card/card_${cardId}.json`
+        card: (cardId) => `public/data/bundles/card/card_${cardId}.json`,
+        epCardAll: 'public/data/bundles/ep/card_all.json'
     }
 };
 

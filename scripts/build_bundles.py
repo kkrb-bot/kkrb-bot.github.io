@@ -136,6 +136,22 @@ def build_card_bundles(scenario_dir, bundle_dir):
     for cid, variants in cards.items():
         save_json([{'variantNum': v, 'data': variants[v]} for v in sorted(variants.keys())], bundle_dir / 'card' / f'card_{cid}.json')
 
+def build_ep_card_bundle(scenario_dir, bundle_dir):
+    print(f"Building EP Card bundle from {scenario_dir}...")
+    ep_card_dir = scenario_dir / 'ep' / 'card'
+    if not ep_card_dir.exists(): return
+    
+    # We'll create one single bundle for all EP cards since they are small
+    all_ep_cards = {}
+    for p in ep_card_dir.glob('iku_epi_*.json'):
+        epid = p.stem.replace('iku_epi_', '')
+        data = load_json(p)
+        if data:
+            all_ep_cards[epid] = data
+            
+    if all_ep_cards:
+        save_json(all_ep_cards, bundle_dir / 'ep' / 'card_all.json')
+
 def main():
     parser = argparse.ArgumentParser(description='Build scenario bundles')
     parser.add_argument('--source', type=str, default='public/scenario', help='Source directory of scenario files')
@@ -155,6 +171,7 @@ def main():
     build_love_bundles(scenario_dir, bundle_dir)
     build_ep_bundles(scenario_dir, bundle_dir)
     build_card_bundles(scenario_dir, bundle_dir)
+    build_ep_card_bundle(scenario_dir, bundle_dir)
     print("Bundling complete!")
 
 if __name__ == '__main__':

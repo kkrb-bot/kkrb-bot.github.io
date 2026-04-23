@@ -312,12 +312,11 @@ function initEpSpecialScenario(dir, onLoadComplete) {
 }
 
 /**
- * カードエピソードJSONを読み込み
- * @param {number} epid - カードエピソードID (epid from card-ep.json)
- * @returns {Promise<Object|null>} シナリオデータまたは null
+ * 全EPカードバンドルを読み込み
+ * @returns {Promise<Object|null>} バンドルデータまたは null
  */
-async function loadEpCardScenario(epid) {
-    const path = API_PATHS.epCardScenario(epid);
+async function loadEpCardBundle() {
+    const path = API_PATHS.bundles.epCardAll;
     return await loadScenarioData(path);
 }
 
@@ -338,25 +337,32 @@ async function loadAndRenderEpCard(displayId, onLoadComplete) {
 
     container.innerHTML = '<div class="loading">読み込み中...</div>';
 
-    // Load card-ep.json to get the epid mapping
     try {
-        // Convert displayId to actualId using the -19 rule
+        // 1. Convert displayId to actualId
         const actualId = getActualCardId(displayId);
         
-        const response = await fetch('public/scenario/ep/card-ep.json');
-        if (!response.ok) throw new Error('Failed to load card-ep.json');
-        const cardEpisodeMap = await response.json();
+        // 2. Load metadata and bundle in parallel
+        const [metaResponse, allEpCards] = await Promise.all([
+            fetch('public/scenario/ep/card-ep.json'),
+            loadEpCardBundle()
+        ]);
         
-        // Get the epid from the mapping
+        if (!metaResponse.ok) throw new Error('Failed to load card-ep.json');
+        if (!allEpCards) throw new Error('Failed to load ep-card bundle');
+        
+        const cardEpisodeMap = await metaResponse.json();
+        
+        // 3. Get the epid from the mapping
         const epid = cardEpisodeMap[actualId];
         if (!epid) {
             container.innerHTML = '<div class="error">カードが見つかりません</div>';
             return;
         }
 
-        // Load the card scenario
-        const scenario = await loadEpCardScenario(epid);
+        // 4. Get the scenario from the bundle
+        const scenario = allEpCards[epid.toString()];
         if (!scenario) {
+            console.error(`[EpCard] Scenario for epid ${epid} not found in bundle`);
             container.innerHTML = '<div class="error">シナリオが見つかりません</div>';
             return;
         }
