@@ -1520,49 +1520,23 @@ function generateScenarioLink(type, scenarioId) {
         }
         case 'campaign': {
             // scenarioId is like '10000' for scenario_login_10000.json
-            // Need to map to campaign index
-            // Load mapping if not loaded
-            if (campaignLoginIdToIndex === null) {
-                loadCampaignMapping().then(({ indexMap }) => {
-                    const campaignIndex = indexMap[scenarioId];
-                    if (campaignIndex !== undefined) {
-                        return `#lgst/${campaignIndex}`;
-                    } else {
-                        return '#lgst';
-                    }
-                });
-                return '#lgst'; // Return default while loading
-            } else {
+            if (campaignLoginIdToIndex) {
                 const campaignIndex = campaignLoginIdToIndex[scenarioId];
                 if (campaignIndex !== undefined) {
                     return `#lgst/${campaignIndex}`;
-                } else {
-                    return '#lgst';
                 }
             }
+            return '#lgst';
         }
         case 'login-event': {
             // scenarioId is like '1' for scenario_login_1.json
-            // Need to map to event id
-            // Load mapping if not loaded
-            if (eventLoginIdToEventId === null) {
-                loadEventMapping().then(({ eventIdMap }) => {
-                    const eventId = eventIdMap[scenarioId];
-                    if (eventId !== undefined) {
-                        return `#event/${eventId}`;
-                    } else {
-                        return '#event';
-                    }
-                });
-                return '#event'; // Return default while loading
-            } else {
+            if (eventLoginIdToEventId) {
                 const eventId = eventLoginIdToEventId[scenarioId];
                 if (eventId !== undefined) {
                     return `#event/${eventId}`;
-                } else {
-                    return '#event';
                 }
             }
+            return '#event';
         }
         default:
             return `#${type}`;
