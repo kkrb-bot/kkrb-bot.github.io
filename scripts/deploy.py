@@ -178,7 +178,7 @@ def main():
         metadata_files = [
             'info.json',
             'event.json',
-            'card-ep.json',
+            'ep/card-ep.json',
             'login/campaign.json',
             'login/event.json'
         ]
