@@ -51,5 +51,4 @@ Thumbs.db
 .pytest_cache/
 
 # GitHub Pages - generated during deployment only
-public/scenario/
-public/manifest/
+public/
