@@ -55,7 +55,40 @@ def load_all_dialogues(base_path: Path):
     all_dialogues = []
     event_names = {}
     
-    # Handle regular types
+    # 0. Pre-load event titles and mappings
+    event_meta_path = base_path / 'event.json'
+    login_event_meta_path = base_path / 'login' / 'event.json'
+    
+    event_id_to_name = {}
+    login_id_to_event_name = {}
+    
+    if event_meta_path.exists():
+        try:
+            with open(event_meta_path, 'r', encoding='utf-8') as f:
+                event_data = json.load(f)
+                # event.json structure: { "episodeList": { "id": [episodes] }, "eventNames": { "id": "name" } }
+                # Or similar. Let's look at common structure
+                names = event_data.get('eventNames', {})
+                for eid, name in names.items():
+                    event_id_to_name[int(eid)] = name.replace('<br>', ' ').strip()
+                    event_names[int(eid)] = event_id_to_name[int(eid)]
+        except Exception as e:
+            print(f"Warning: Failed to parse event.json: {e}")
+
+    if login_event_meta_path.exists():
+        try:
+            with open(login_event_meta_path, 'r', encoding='utf-8') as f:
+                login_meta = json.load(f)
+                # login/event.json structure: { "eventId": { "lgstList": [loginIds] } }
+                for eid_str, data in login_meta.items():
+                    eid = int(eid_str)
+                    name = event_id_to_name.get(eid, f"イベント{eid}")
+                    for lid in data.get('lgstList', []):
+                        login_id_to_event_name[str(lid)] = name
+        except Exception as e:
+            print(f"Warning: Failed to parse login/event.json: {e}")
+
+    # 1. Handle regular types
     for scenario_type in types:
         type_path = base_path / scenario_type
         
@@ -191,9 +224,16 @@ def load_all_dialogues(base_path: Path):
                     filename = json_file.stem  # scenario_login_XXXXX
                     scenario_id = filename.replace('scenario_login_', '')
                     
+                    # Determine title: Use mapped event name if available
+                    event_name = login_id_to_event_name.get(scenario_id)
+                    original_title = data.get('Title', '')
+                    if event_name:
+                        title = f"{event_name} | {original_title}" if original_title else event_name
+                    else:
+                        title = original_title
+                        
                     # Extract dialogues
                     if 'Dialogue' in data and isinstance(data['Dialogue'], list):
-                        title = data.get('Title', '')
                         extract_dialogues_recursive(data['Dialogue'], 'login-event', scenario_id, all_dialogues, title)
                 
                 except Exception as e:
