@@ -1059,14 +1059,15 @@ function displaySearchResults(dialogues, speakers, contentPattern, scenarioType)
     html += '<div class="results-list">';
 
     Object.entries(grouped).forEach(([key, group]) => {
-        const typeLabel = {
-            main: 'メインストーリー',
-            card: 'カードストーリー',
-            event: 'イベントストーリー',
-            caulis: 'イベントストーリー',
-            love: '親愛ストーリー'
-        }[group.type] || group.type;
-
+    const typeLabel = {
+        main: 'メインストーリー',
+        card: 'カードストーリー',
+        event: 'イベントストーリー',
+        caulis: 'イベントストーリー',
+        love: '親愛ストーリー',
+        'login-event': 'ログインストーリー（イベント）',
+        campaign: 'ログインストーリー（キャンペーン）'
+    }[group.type] || group.type;
         const scenarioLink = generateScenarioLink(group.type, group.id);
         const firstDialogue = group.dialogues[0];
         const chunkTitle = firstDialogue.title || '';
@@ -1119,7 +1120,9 @@ function typeLabelForDisplay(type) {
         card: 'カードストーリー',
         event: 'イベントストーリー',
         caulis: 'イベントストーリー',
-        love: '親愛ストーリー'
+        love: '親愛ストーリー',
+        'login-event': 'ログインストーリー（イベント）',
+        campaign: 'ログインストーリー（キャンペーン）'
     }[type] || type;
 }
 
