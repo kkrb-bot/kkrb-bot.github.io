@@ -142,7 +142,8 @@ def main():
     
     # Configuration
     repo_url = "git@github.com:kkrb-bot/scenario.git"  # SSH URL
-    temp_dir = Path('.github/temp_scenario')  # Temporary directory for cloned repo
+    # Move temp_dir outside of the current repository to avoid Git/CI interference
+    temp_dir = Path('../temp_scenario_data')  
     target_dir = Path('public/scenario')
     github_token = os.environ.get('GITHUB_TOKEN')
     

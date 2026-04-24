@@ -21,6 +21,9 @@ jobs:
       - name: Checkout main repository
         uses: actions/checkout@v6
 
+      - name: Remove ignore rules for build
+        run: rm .gitignore
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -41,15 +44,10 @@ jobs:
         run: |
           echo "=== Checking public directory ==="
           ls -lah public/ || echo "public directory not found!"
-          echo "=== JSON files in public/scenario ==="
-          find public/scenario -type f -name "*.json" | head -20
+          echo "=== Metadata files in public/scenario ==="
+          ls -R public/scenario/
           echo "=== JSON files in public/data/chunks ==="
           find public/data/chunks -type f | head -10
-
-      - name: Add generated files to artifact
-        run: |
-          rm .gitignore
-          git add -f public/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5.0.0
