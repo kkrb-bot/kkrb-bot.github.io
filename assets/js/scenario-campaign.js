@@ -89,55 +89,51 @@ function analyzeTitles(scenarios, defaultH2) {
 
     // If fewer than 2 titles contain a separator (i.e. parts with >1 element), fallback to defaults
     const multiPartCount = parts.filter(p => p.length > 1).length;
+
+    // Helper: join all parts with <br> to prevent data loss
+    const getFullTitleDisplay = (p, original) => {
+        if (p && p.length > 0) return p.join('<br>');
+        return original || '';
+    };
+
     if (multiPartCount < 2) {
         return {
             h2Text: defaultH2,
             h3Texts: scenarios.map((s, i) => {
                 const p = parts[i];
-                if (p && p.length > 0) {
-                    return p[0];
-                } else if (s.Title) {
-                    return s.Title;
-                } else {
-                    return `ストーリー${i + 1}`;
-                }
+                return getFullTitleDisplay(p, s.Title) || `ストーリー${i + 1}`;
             })
         };
     }
 
     const prefixes = parts.map(p => p[0] || '');
-    const suffixes = parts.map(p => p[1] || '');
+    const suffixes = parts.map(p => p[p.length - 1] || '');
 
-    const allPrefixesSame = prefixes.every(p => p === prefixes[0]);
-    const allSuffixesSame = suffixes.every(s => s === suffixes[0]);
+    const allPrefixesSame = prefixes.every(p => p === prefixes[0]) && prefixes[0] !== '';
+    const allSuffixesSame = suffixes.every(s => s === suffixes[0]) && suffixes[0] !== '';
 
     let h2Text = defaultH2;
     let h3Texts = [];
 
     if (allPrefixesSame && !allSuffixesSame) {
-        // |前が全て同じ、|後が違う → h2 = |前, h3 = |後
+        // |前が全て同じ、|後が違う → h2 = |前, h3 = |後 (all remaining parts)
         h2Text = prefixes[0] || defaultH2;
-        h3Texts = scenarios.map((s, i) => {
-            const p = parts[i];
-            if (p && p.length > 1) return p[1];
-            if (p && p.length === 1) return p[0];
-            return s.Title || `ストーリー${i + 1}`;
+        h3Texts = parts.map((p, i) => {
+            if (p.length > 1) return p.slice(1).join('<br>');
+            return p[0] || scenarios[i].Title || `ストーリー${i + 1}`;
         });
     } else if (!allPrefixesSame && allSuffixesSame) {
-        // |前が違う、|後が同じ → h2 = |後, h3 = |前
+        // |前が違う、|後が同じ → h2 = |後, h3 = |前 (all previous parts)
         h2Text = suffixes[0] || defaultH2;
-        h3Texts = scenarios.map((s, i) => {
-            const p = parts[i];
-            if (p && p.length > 0) return p[0];
-            return s.Title || `ストーリー${i + 1}`;
+        h3Texts = parts.map((p, i) => {
+            if (p.length > 1) return p.slice(0, -1).join('<br>');
+            return p[0] || scenarios[i].Title || `ストーリー${i + 1}`;
         });
     } else {
-        // デフォルト: use first part (or full title) as h3
+        // Default: use full reconstructed title as h3
         h3Texts = scenarios.map((s, i) => {
             const p = parts[i];
-            if (p && p.length > 0) return p[0];
-            if (s.Title) return s.Title;
-            return `ストーリー${i + 1}`;
+            return getFullTitleDisplay(p, s.Title) || `ストーリー${i + 1}`;
         });
     }
 
