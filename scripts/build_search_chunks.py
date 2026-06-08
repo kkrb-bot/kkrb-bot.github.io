@@ -19,6 +19,10 @@ def extract_dialogues_recursive(dialogue_list, scenario_type, scenario_id, all_d
         if isinstance(item, list) and len(item) == 2:
             # Normal dialogue: [speaker, content]
             speaker, content = item
+            # Remove newlines for cleaner search
+            if isinstance(content, str):
+                content = content.replace('\n', '').strip()
+            
             all_dialogues.append({
                 'scenarioType': scenario_type,
                 'scenarioId': scenario_id,
@@ -32,6 +36,10 @@ def extract_dialogues_recursive(dialogue_list, scenario_type, scenario_id, all_d
                 if isinstance(branch_option, list) and len(branch_option) >= 2:
                     # branch_option[0] is choice text, branch_option[1] is dialogue list
                     choice_text = branch_option[0]
+                    # Remove newlines for cleaner search
+                    if isinstance(choice_text, str):
+                        choice_text = choice_text.replace('\n', '').strip()
+                        
                     branch_dialogues = branch_option[1]
                     
                     # Add choice text as a dialogue entry
