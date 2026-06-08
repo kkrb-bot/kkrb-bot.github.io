@@ -5,6 +5,8 @@
  */
 
 let allDialogues = [];
+let scenarioDict = []; // [{t: type, i: id, l: title}]
+let speakerDict = [];  // [name1, name2, ...]
 let isSearching = false;
 let eventNames = {};
 let isLoadingData = false;
@@ -278,7 +280,7 @@ async function initSearch() {
  */
 function setupWorkerHandlers() {
     searchWorker.onmessage = (event) => {
-        const { type, message, current, total, dialogues, eventNames: names, error } = event.data;
+        const { type, message, current, total, dialogues, scenarios, speakers, eventNames: names, error } = event.data;
         
         if (type === 'log') {
             console.log('[Worker]', message);
@@ -304,6 +306,8 @@ function setupWorkerHandlers() {
             }
         } else if (type === 'complete') {
             allDialogues = dialogues;
+            scenarioDict = scenarios;
+            speakerDict = speakers;
             eventNames = names || {};
             
             // Store event names in sessionStorage as backup
@@ -917,9 +921,9 @@ function performSearchInternal() {
 
     try {
         isSearching = true;
-        const speakers = getSelectedSpeakers();
+        const selectedSpeakerNames = getSelectedSpeakers();
         const contentPattern = document.getElementById('content-input').value;
-        const scenarioTypes = getSelectedScenarioTypes();
+        const selectedScenarioTypes = getSelectedScenarioTypes();
 
         let regex = null;
         if (contentPattern) {
@@ -932,23 +936,48 @@ function performSearchInternal() {
             }
         }
 
-        let results = allDialogues.filter(dialogue => {
-            if (speakers.length > 0 && !speakers.some(speaker => dialogue.speaker.includes(speaker))) {
+        // Map speaker names to indices for faster lookup
+        const selectedSpeakerIndices = new Set();
+        if (selectedSpeakerNames.length > 0) {
+            speakerDict.forEach((name, idx) => {
+                if (selectedSpeakerNames.some(s => name.includes(s))) {
+                    selectedSpeakerIndices.add(idx);
+                }
+            });
+        }
+
+        let results = allDialogues.filter(d => {
+            const [scenarioIdx, speakerIdx, content] = d;
+            
+            // 1. Speaker Filter
+            if (selectedSpeakerIndices.size > 0 && !selectedSpeakerIndices.has(speakerIdx)) {
                 return false;
             }
 
-            if (scenarioTypes.length > 0 && !scenarioTypes.includes(dialogue.scenarioType)) {
-                return false;
+            // 2. Scenario Type Filter
+            if (selectedScenarioTypes.length > 0) {
+                const s = scenarioDict[scenarioIdx];
+                const matched = selectedScenarioTypes.some(type => {
+                    if (type === 'ep-special') {
+                        return s.t.startsWith('ep-special-');
+                    }
+                    if (type === 'event') {
+                        return s.t === 'event' || s.t === 'caulis';
+                    }
+                    return s.t === type;
+                });
+                if (!matched) return false;
             }
 
-            if (regex && !regex.test(dialogue.content)) {
+            // 3. Content Regex Filter
+            if (regex && !regex.test(content)) {
                 return false;
             }
 
             return true;
         });
 
-        displaySearchResults(results, speakers, contentPattern, scenarioTypes);
+        displaySearchResults(results, selectedSpeakerNames, contentPattern, selectedScenarioTypes);
         isSearching = false;
     } catch (error) {
         console.error('Search error:', error);
@@ -1041,15 +1070,21 @@ function displaySearchResults(dialogues, speakers, contentPattern, scenarioType)
 
     const grouped = {};
     dialogues.forEach(d => {
-        const key = `${d.scenarioType}_${d.scenarioId}`;
+        const [scenarioIdx, speakerIdx, content] = d;
+        const s = scenarioDict[scenarioIdx];
+        const key = `${s.t}_${s.i}`;
         if (!grouped[key]) {
             grouped[key] = {
-                type: d.scenarioType,
-                id: d.scenarioId,
+                type: s.t,
+                id: s.i,
+                title: s.l,
                 dialogues: []
             };
         }
-        grouped[key].dialogues.push(d);
+        grouped[key].dialogues.push({
+            speaker: speakerDict[speakerIdx],
+            content: content
+        });
     });
 
     let html = `<div class="results-summary">
@@ -1059,37 +1094,8 @@ function displaySearchResults(dialogues, speakers, contentPattern, scenarioType)
     html += '<div class="results-list">';
 
     Object.entries(grouped).forEach(([key, group]) => {
-    const typeLabel = {
-        main: 'メインストーリー',
-        card: 'カードストーリー',
-        event: 'イベントストーリー',
-        caulis: 'イベントストーリー',
-        love: '親愛ストーリー',
-        'login-event': 'ログインストーリー（イベント）',
-        campaign: 'ログインストーリー（キャンペーン）'
-    }[group.type] || group.type;
         const scenarioLink = generateScenarioLink(group.type, group.id);
-        const firstDialogue = group.dialogues[0];
-        const chunkTitle = firstDialogue.title || '';
-
-        let displayTitle;
-        if (group.type === 'main') {
-            displayTitle = `メインストーリー｜${generateMainStoryTitle(group.id)}`;
-        } else if (group.type === 'event' || group.type === 'caulis') {
-            displayTitle = `イベントストーリー｜${generateEventStoryTitle(group.id, chunkTitle)}`;
-        } else if (group.type === 'love') {
-            displayTitle = `親愛ストーリー｜${generateLoveStoryTitle(group.id)}`;
-        } else if (group.type === 'card') {
-            displayTitle = `カードストーリー｜${generateCardStoryTitle(group.id)}`;
-        } else if (group.type.startsWith('ep-')) {
-            displayTitle = generateDisplayTitle(group.type, group.id, chunkTitle);
-        } else if (group.type === 'campaign') {
-            displayTitle = `ログインストーリー｜${generateCampaignStoryTitle(group.id, chunkTitle)}`;
-        } else if (group.type === 'login-event') {
-            displayTitle = `イベントストーリー｜${generateLoginEventStoryTitle(group.id, chunkTitle)}`;
-        } else {
-            displayTitle = `${typeLabel}｜${group.id}`;
-        }
+        const displayTitle = generateDisplayTitle(group.type, group.id, group.title);
 
         html += `<div class="result-scenario" data-type="${group.type}" data-id="${group.id}">
             <div class="scenario-title"><a href="${scenarioLink}" target="_blank" rel="noopener noreferrer" class="scenario-link">
@@ -1097,7 +1103,7 @@ function displaySearchResults(dialogues, speakers, contentPattern, scenarioType)
             </a></div>
             <ul class="dialogue-list">`;
 
-        group.dialogues.forEach((d, idx) => {
+        group.dialogues.forEach((d) => {
             const highlightedContent = highlightContent(d.content, contentPattern);
             html += `<li>
                 <strong>${escapeHtml(d.speaker)}:</strong>
@@ -1115,6 +1121,15 @@ function displaySearchResults(dialogues, speakers, contentPattern, scenarioType)
 }
 
 function typeLabelForDisplay(type) {
+    if (type === 'ep-spot') return 'エピソード（スポット）';
+    if (type === 'ep-chara') return 'エピソード（キャラ）';
+    if (type === 'ep-card') return 'エピソード（カード）';
+    if (type.startsWith('ep-special-')) {
+        const dir = type.replace('ep-special-', '');
+        const dirConfig = EP_SPECIAL_CONFIG.directories.find(d => d.id === dir);
+        const name = dirConfig ? dirConfig.displayName.replace(/<br>/gi, '') : dir;
+        return `エピソード（${name}）`;
+    }
     return {
         main: 'メインストーリー',
         card: 'カードストーリー',
@@ -1130,20 +1145,28 @@ function typeLabelForDisplay(type) {
  * 検索結果の表示タイトルを生成
  */
 function generateDisplayTitle(type, scenarioId, title = '') {
+    const label = typeLabelForDisplay(type);
+    let content = '';
+
     if (type === 'main') {
-        return generateMainStoryTitle(scenarioId);
+        content = generateMainStoryTitle(scenarioId);
     } else if (type === 'event' || type === 'caulis') {
-        return generateEventStoryTitle(scenarioId, title);
+        content = generateEventStoryTitle(scenarioId, title);
     } else if (type === 'love') {
-        return generateLoveStoryTitle(scenarioId);
+        content = generateLoveStoryTitle(scenarioId);
+    } else if (type === 'card') {
+        content = generateCardStoryTitle(scenarioId);
     } else if (type.startsWith('ep-')) {
-        return generateEpStoryTitle(type, scenarioId, title);
+        content = generateEpStoryTitle(type, scenarioId, title);
     } else if (type === 'campaign') {
-        return generateCampaignStoryTitle(scenarioId, title);
+        content = generateCampaignStoryTitle(scenarioId, title);
     } else if (type === 'login-event') {
-        return generateLoginEventStoryTitle(scenarioId, title);
+        content = generateLoginEventStoryTitle(scenarioId, title);
+    } else {
+        content = scenarioId;
     }
-    return scenarioId;
+
+    return `${label}｜${content}`;
 }
 
 /**
@@ -1268,10 +1291,10 @@ function generateEpStoryTitle(type, scenarioId, title = '') {
         if (cardIdToDisplayId && cardEpIdToCardId) {
             const cardId = cardEpIdToCardId[scenarioId];
             if (cardId && cardIdToDisplayId[cardId]) {
-                return `エピソード（カード） - ${cardIdToDisplayId[cardId]}`;
+                return cardIdToDisplayId[cardId];
             }
         }
-        return `エピソード（カード） - ${scenarioId}`;
+        return scenarioId;
     }
     
     if (type.startsWith('ep-special-')) {
@@ -1290,9 +1313,8 @@ function generateEpStoryTitle(type, scenarioId, title = '') {
                 }
             }
             // Remove <br> tags from both displayName and processedTitle
-            const cleanDisplayName = dirConfig.displayName.replace(/<br>/gi, '');
             processedTitle = processedTitle.replace(/<br>/gi, '');
-            return `エピソード（${cleanDisplayName}）｜${processedTitle}`;
+            return processedTitle;
         }
     }
     
@@ -1309,7 +1331,7 @@ function generateEpStoryTitle(type, scenarioId, title = '') {
             const spotPart = parseInt(scenarioId.substring(1, 3)) + 1;
             spotId = spotPart;
         } else {
-            return `エピソード（スポット） - ${scenarioId}`;
+            return scenarioId;
         }
         
         const spotNames = [
@@ -1346,12 +1368,12 @@ function generateEpStoryTitle(type, scenarioId, title = '') {
                 // 両側に内容がある場合：全角スペースに置き換え
                 processedTitle = processedTitle.replace('|', '　');
             } else if (parts[0].trim()) {
-                // 左側だけに内容がある場合：左側のみ保持
+                // 左側だけに内容がある場合：左侧のみ保持
                 processedTitle = parts[0].trim();
             }
         }
         
-        return `エピソード（スポット）｜${spotName}｜${processedTitle}`;
+        return `${spotName}｜${processedTitle}`;
     }
     
     switch (type) {
@@ -1371,11 +1393,11 @@ function generateEpStoryTitle(type, scenarioId, title = '') {
                 }
             }
             
-            return `エピソード（キャラ）｜${characterName}｜${processedTitle}`;
+            return `${characterName}｜${processedTitle}`;
         case 'ep-special':
-            return `エピソード（スペシャル） - ${scenarioId}`;
+            return scenarioId;
         default:
-            return `エピソード - ${scenarioId}`;
+            return scenarioId;
     }
 }
 
@@ -1414,14 +1436,23 @@ function generateCampaignStoryTitle(scenarioId, chunkTitle = '') {
  */
 function generateLoginEventStoryTitle(scenarioId, chunkTitle = '') {
     if (chunkTitle) {
-        return chunkTitle.replace(/\|/g, '　');
+        // If it starts with "Event ID | ", remove it
+        let processed = chunkTitle;
+        if (processed.includes('|')) {
+            const parts = processed.split('|');
+            // If the first part is just "Event Name" or "Event ID", we might want to skip it
+            // Based on user request, they want to skip the "イベント32" part
+            if (parts.length > 1) {
+                processed = parts.slice(1).join('　').trim();
+            }
+        }
+        return processed.replace(/\|/g, '　');
     }
     if (eventLoginIdToTitle && eventLoginIdToTitle[scenarioId]) {
         const title = eventLoginIdToTitle[scenarioId];
-        // Replace | with full-width space
         return title.replace(/\|/g, '　');
     }
-    return `ログインイベント - ${scenarioId}`;
+    return scenarioId;
 }
 
 /**
