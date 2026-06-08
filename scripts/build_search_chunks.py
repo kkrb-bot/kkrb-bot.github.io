@@ -22,6 +22,10 @@ speaker_dict = []  # List of speaker names
 speaker_map = {}   # speaker_name -> index
 
 def get_scenario_index(scenario_type, scenario_id, title):
+    # Clean trailing | or ｜ (full-width) and surrounding whitespace
+    if isinstance(title, str):
+        title = title.rstrip('|｜').strip()
+    
     key = (scenario_type, scenario_id, title)
     if key not in scenario_map:
         scenario_map[key] = len(scenario_dict)
@@ -257,7 +261,7 @@ def compress_and_save_chunks(chunks, event_names, version, output_dir: Path):
     
     chunk_manifest['totalCompressedSize'] = total_compressed
     with open(output_dir / 'manifest.json', 'w', encoding='utf-8') as f:
-        json.dump(chunk_manifest, f, ensure_ascii=False, indent=2)
+        json.dump(chunk_manifest, f, ensure_ascii=False, separators=(',', ':'))
     
     print(f"\n=== Summary ===\nTotal chunks: {len(chunks)}\nTotal uncompressed: {total_uncompressed / 1024 / 1024:.2f}MB\nTotal compressed: {total_compressed / 1024 / 1024:.2f}MB")
 

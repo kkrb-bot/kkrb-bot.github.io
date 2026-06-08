@@ -800,27 +800,19 @@ async function getIndexedDBSize() {
                 
                 const transaction = db.transaction(['chunks'], 'readonly');
                 const store = transaction.objectStore('chunks');
-                const getAllRequest = store.getAllKeys();
+                const getAllRequest = store.getAll(); // Directly get all items for faster calculation
                 
-                getAllRequest.onsuccess = async () => {
-                    const keys = getAllRequest.result;
+                getAllRequest.onsuccess = () => {
+                    const allData = getAllRequest.result;
                     let totalSize = 0;
+                    const encoder = new TextEncoder();
                     
-                    // 各キーのデータサイズを計算
-                    for (const key of keys) {
-                        const getRequest = store.get(key);
-                        await new Promise((resolveItem) => {
-                            getRequest.onsuccess = () => {
-                                const data = getRequest.result;
-                                if (data) {
-                                    // オブジェクトのJSON文字列化サイズで推定
-                                    const jsonStr = JSON.stringify(data);
-                                    totalSize += jsonStr.length;
-                                }
-                                resolveItem();
-                            };
-                            getRequest.onerror = () => resolveItem();
-                        });
+                    for (const data of allData) {
+                        if (data) {
+                            // Convert object back to JSON and measure actual UTF-8 bytes
+                            const jsonStr = JSON.stringify(data);
+                            totalSize += encoder.encode(jsonStr).length;
+                        }
                     }
                     
                     db.close();
@@ -1155,7 +1147,7 @@ function generateDisplayTitle(type, scenarioId, title = '') {
     } else if (type === 'love') {
         content = generateLoveStoryTitle(scenarioId);
     } else if (type === 'card') {
-        content = generateCardStoryTitle(scenarioId);
+        content = generateCardStoryTitle(scenarioId, title);
     } else if (type.startsWith('ep-')) {
         content = generateEpStoryTitle(type, scenarioId, title);
     } else if (type === 'campaign') {
@@ -1268,7 +1260,7 @@ function generateLoveStoryTitle(scenarioId) {
 /**
  * カードストーリーの表示タイトルを生成
  */
-function generateCardStoryTitle(scenarioId) {
+function generateCardStoryTitle(scenarioId, title = '') {
     const [cardIdStr, episodeStr] = scenarioId.split('-');
     
     const cardId = parseInt(cardIdStr);
@@ -1279,6 +1271,13 @@ function generateCardStoryTitle(scenarioId) {
     const episode = parseInt(episodeStr);
     const japaneseEpisode = japaneseNumerals[episode] || episode;
     
+    if (title) {
+        // title format is usually "CardName|EpisodeName"
+        // We take the first part as card name
+        const cardName = title.split('|')[0].trim();
+        return `${displayId}｜${cardName}｜${japaneseEpisode}話`;
+    }
+    
     return `${displayId}　${japaneseEpisode}話`;
 }
 
@@ -1288,13 +1287,19 @@ function generateCardStoryTitle(scenarioId) {
 function generateEpStoryTitle(type, scenarioId, title = '') {
     if (type === 'ep-card') {
         // For ep-card, show displayId (cardId - 19)
+        let displayId = scenarioId;
         if (cardIdToDisplayId && cardEpIdToCardId) {
             const cardId = cardEpIdToCardId[scenarioId];
             if (cardId && cardIdToDisplayId[cardId]) {
-                return cardIdToDisplayId[cardId];
+                displayId = cardIdToDisplayId[cardId];
             }
         }
-        return scenarioId;
+        
+        if (title) {
+            const processedTitle = title.replace(/\|/g, '｜').trim();
+            return `${displayId}｜${processedTitle}`;
+        }
+        return displayId;
     }
     
     if (type.startsWith('ep-special-')) {
