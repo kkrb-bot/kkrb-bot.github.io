@@ -91,8 +91,12 @@ def build_ep_bundles(scenario_dir, bundle_dir):
         spots = {}
         for p in spot_dir.glob('*.json'):
             name = p.stem
-            if name.startswith('iku_epi_1001'): spot_id, seq = 22, int(name[12:])
-            else: spot_id, seq = int(name[9:11]) + 1, int(name[11:])
+            # Spot 22 (Special) always has 6 digits (total length 14) and starts with 1001
+            if len(name) == 14 and name.startswith('iku_epi_1001'):
+                spot_id, seq = 22, int(name[12:])
+            else:
+                # Regular spots have 5 digits (total length 13)
+                spot_id, seq = int(name[9:11]) + 1, int(name[11:])
             if spot_id not in spots: spots[spot_id] = {}
             spots[spot_id][seq] = load_json(p)
         for sid, episodes in spots.items():
